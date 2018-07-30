@@ -1,4 +1,3 @@
-
 <#
  .SYNOPSIS
         GPO-BackupAndRestore.ps1
@@ -52,6 +51,8 @@ function Import-GPOs {
         Import-GPO -TargetName $Name -Path $Path -BackupId $ID.Name
     }
 }
+
+cls
 
  switch ($Mode){
     "Export" {Export-GPOs; break}
