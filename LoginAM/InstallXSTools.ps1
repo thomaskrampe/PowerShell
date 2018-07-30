@@ -1,0 +1,1 @@
+﻿&"%SystemRoot%\System32\msiexec.exe /i %AM_Workfolder%\1e8e2bea-d205-4da4-b5cd-93f1819dafbd\1\installwizard.msi /quiet /norestart"

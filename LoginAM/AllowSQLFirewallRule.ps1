@@ -1,0 +1,1 @@
+﻿New-NetFirewallRule -DisplayName “Allow Inbound SQL” -Direction Inbound -RemoteAddress LocalSubnet -protocol tcp -LocalPort 1433 -Action Allow 
