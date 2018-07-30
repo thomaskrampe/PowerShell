@@ -54,10 +54,7 @@ function Import-GPOs {
 }
 
  switch ($Mode){
-    {$_ -eq „Export“}
-    {Export-GPOs
-    break}
-    {$_ -eq „Import“}
-    {Import-GPOs
-    break}
+    "Export" {Export-GPOs; break}
+    "Import" {Import-GPOs; break}
 }
+exit 0
