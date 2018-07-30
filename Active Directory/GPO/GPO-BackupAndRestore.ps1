@@ -11,7 +11,7 @@
         GPO-BackupAndRestore.ps1 -Mode Export
         GPO-BackupAndRestore.ps1 -Mode Import
  .LINK
-        https://github.com/thomaskrampe/
+        https://github.com/thomaskrampe/PowerShell
                  
  .NOTES
         Author        : Thomas Krampe | t.krampe@loginconsultants.de
