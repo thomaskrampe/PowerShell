@@ -11,7 +11,6 @@
         GPO-BackupAndRestore.ps1 -Mode Import
  .LINK
         https://github.com/thomaskrampe/PowerShell
-                 
  .NOTES
         Author        : Thomas Krampe | t.krampe@loginconsultants.de
         Version       : 1.0
