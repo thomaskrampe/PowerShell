@@ -19,7 +19,6 @@
         Creation date : 26.07.2018 | v0.1 | Initial script
         Last change   : 30.07.2018 | v1.0 | Release to GitHub
 #>
-cls
 
 Param(
 [Parameter(Mandatory=$True)]
