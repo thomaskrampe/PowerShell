@@ -2,7 +2,7 @@
  .SYNOPSIS
         GPO-BackupAndRestore.ps1
  .DESCRIPTION
-        Easy Script to Ex- and Import GPO's
+        Lightweight Script for Ex- and Importing GPO's for e.g. GPO migration
  .PARAMETER Mode
         Export 
         Import
@@ -28,6 +28,8 @@ Param(
 import-module grouppolicy
 $ExportFolder=“c:\_GPO-EXPORT\“
 $Importfolder=“c:\_GPO-EXPORT\“
+
+# For importing the GPO's to a new domain you can specify either a prefix or a suffix
 $Prefix=““
 $Suffix=““
  
