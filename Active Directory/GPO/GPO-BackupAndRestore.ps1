@@ -21,7 +21,7 @@
 
 Param(
 [Parameter(Mandatory=$True)]
-[ValidateSet(„Export“, „Import“)]
+[ValidateSet("Export", "Import")]
 [string]$Mode
  )
  
