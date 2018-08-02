@@ -25,7 +25,7 @@ Param(
 [string]$Mode
  )
  
- # Change the variables to your own need
+ # Change the variables to your own needs
 import-module grouppolicy
 $ExportFolder="c:\_GPO-EXPORT\"
 $Importfolder="c:\_GPO-EXPORT\"
