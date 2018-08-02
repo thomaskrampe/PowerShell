@@ -61,7 +61,7 @@ function Import-GPOs {
     }
 }
 
-cls
+Clear-Host
 
  switch ($Mode){
     "Export" {Export-GPOs; break}
