@@ -37,7 +37,7 @@
         
 # Script parameter        
 Param(
-    [Parameter(Mandatory=$True)][ValidateSet("Export", "Import")][string]$Mode,
+    [Parameter(Mandatory=$True)][ValidateSet("Export", "Import", "Audit")][string]$Mode,
     [string]$Prefix,
     [string]$Suffix,
     [string]$Folder = "C:\_GPO-EXPORT\"
@@ -47,14 +47,18 @@ Param(
 $global:ErrorActionPreference = "Stop"
 if($verbose){ $global:VerbosePreference = "Continue" }
 
-# Define Variables
+# Define and fill variables
 $Domain = ([ADSI]"LDAP://RootDSE").ldapServiceName.split(":")[0]
 $DomainCtrl = ([ADSI]"LDAP://RootDSE").dnsHostName
+
+# -------------------------------------------------------------------------------------------------
+# Log handling
+# -------------------------------------------------------------------------------------------------
 $BaseLogDir = "C:\Logs"
 $ScriptName = "GPO Handling"
 $StartDir = $PSScriptRoot 
 $LogDir = (Join-Path $BaseLogDir $ScriptName).Replace(" ","_")
-$LogFileName = "$($ScriptName).log"
+$LogFileName = "$ScriptName.log"
 $LogFile = Join-path $LogDir $LogFileName
 
 # Create the log directory if it does not exist
@@ -107,7 +111,7 @@ function TK_WriteLog {
      $DateTime = (Get-Date -format dd-MM-yyyy) + " " + (Get-Date -format HH:mm:ss)
  
         if ( $Text -eq "" ) {
-            Add-Content $LogFile -value ("") # Write an empty line
+            Add-Content $LogFile -value ("") 
         } Else {
          Add-Content $LogFile -value ($DateTime + " " + $InformationType.ToUpper() + " - " + $Text)
         }
@@ -118,72 +122,171 @@ function TK_WriteLog {
 
 
 }
- 
+
+function TK_IsAdmin {
+
+    begin {
+    }
+
+    process {
+        ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
+    }
+    
+    end {
+    }
+    
+}
+
 function TK_ExportGPOs {
+
+    begin {
+    }
+    
+    process {
     $GPO=Get-GPO -All
+    $Server = $DomainCtrl.split(".")[0]
     foreach ($Entry in $GPO) {
-        $Path=$Folder+$entry.Displayname
-        New-Item -ItemType directory -Path $Path
-        Backup-GPO -Guid $Entry.id -Path $Path -Domain $Domain -Server $DomainCtrl
+        $GPOPath=$Folder+$entry.Displayname
+        New-Item -ItemType directory -Path $GPOPath
+        TK_WriteLog "S" "Folder $GPOPath succesfully created." $LogFile
+        Backup-GPO -Guid $Entry.id -Path $GPOPath -Domain $Domain -Server $Server
+        TK_WriteLog "S" "GPO $($Entry.Displayname) with GUID $($Entry.id) succesfully created." $LogFile
+        }
+    }
+
+    end {
     }
 }
  
 function TK_ImportGPOs {
+    
+    begin {
+    }
+
+    process {
     $ImportFolder=Get-childItem -Path $Folder -Exclude *.ps1
+    $Server = $DomainCtrl.split(".")[0]
     foreach ($Entry in $ImportFolder) {
         $Name=$Prefix+$Entry.Name+$Suffix
-        $Path=$Folder+$entry.Name
-        $ID=Get-ChildItem -Path $Path
-        New-GPO -Name $Name -Domain $Domain -Server $DomainCtrl
-        Import-GPO -TargetName $Name -Path $Path -BackupId $ID.Name .$Domain -Server $DomainCtrl
+        $ImportPath=$Folder+$entry.Name
+        $ID=Get-ChildItem -Path $ImportPath
+        
+        New-GPO -Name $Name -Domain $Domain -Server $Server
+        TK_WriteLog "S" "GPO Object $Name in Domain $Domain succesfully created." $LogFile
+        Import-GPO -TargetName $Name -Path $ImportPath -BackupId $ID.Name -Domain $Domain -Server $Server
+        TK_WriteLog "S" "GPO Import $Name with ID $($id.name) succesfully imported."
+        }
     }
+
+    end {
+    }
+}
+
+function TK_AuditGPOs {
+    [CmdletBinding()]
+    Param( 
+       [String]$AuditFileName = "GPO-Audit.csv"
+    )
+    begin {
+    }
+
+    Process {
+       
+    if (!(Test-Path $Folder)) { New-Item -Path $Folder -ItemType directory | Out-Null }
+    $AuditPath = Join-path $Folder $AuditFileName
+    get-gpo -all | select-object Displayname,ID,Description,GPOStatus,CreationTime,ModificationTime,@{Label="ComputerVersion";Expression={$_.computer.dsversion}},@{Label="UserVersion";Expression={$_.user.dsversion}}| export-csv $AuditPath
+    TK_WriteLog "I" "Audit report $Auditpath succesfully created." $LogFile
+    }
+
+    end {
+    }
+
+}
+
+function TK_ImportModule {
+    [CmdletBinding()]
+    Param( 
+        [Parameter(Mandatory=$true, Position = 0)][String]$Module
+    )
+
+    begin {
+    }
+
+    process {
+        $ModuleExist = Get-Module -List $Module
+        If (!$ModuleExist){
+            TK_WriteLog "E" "PowerShell Module GroupPolicy doesn't exist." $LogFile
+            Write-Host "PowerShell Module GroupPolicy doesn't exist on this machine." -ForegroundColor Red
+            Write-Host "Please install RSAT Roles or run this script on a Domain Controller (not recommended).\n" -ForegroundColor Red
+            # Offer Feature installation
+            # $a = new-object -comobject wscript.shell 
+            # $intAnswer = $a.popup("Do you want to install the GPMC and RSAT Tools on this machine now?", 0,"Install GPMC and RSAT Features",4)
+            # If ($intAnswer -eq 6) { 
+            #     try {
+            #         
+            #         if (!(TK_IsAdmin)){
+            #             TK_WriteLog "E" "Missing admin priviliges. Can't install features." $LogFile
+            #             throw "Please run this script with admin priviliges."   
+            #             Exit 1             
+            #             }
+            #         else {
+            #             Install-WindowsFeature GPMC,RSAT-ADDS-Tools
+            #             TK_WriteLog "S" "The windows features were installed successfully!" $LogFile                
+            #             }
+            #         } 
+            #         catch {
+            #             TK_WriteLog "E" "An error occurred while installing the windows features (error: $($error[0]))" $LogFile
+            #         Exit 1
+            #         } 
+            # } else { 
+            #     TK_WriteLog "I" "Installation of RSAT and GPMC chanceled." $LogFile
+            #     Exit 1 
+            # }
+            Exit 1
+        }
+        Import-Module $Module    
+        TK_WriteLog "S" "GPO Module succesfully imported." $LogFile
+
+    }
+
+    end {
+    }
+
 }
 
 # -------------------------------------------------------------------------------------------------
 # MAIN SECTION
 # -------------------------------------------------------------------------------------------------
-cls
-
 # Disable File Security
 $env:SEE_MASK_NOZONECHECKS = 1
- 
+
+Clear-Host
+
+Write-Host "Starting script in $mode mode.`n`r" 
+
+# Verify adminstrative permissisions
+$AdminPerms = TK_IsAdmin
+
+# Logging
 TK_WriteLog "I" "START SCRIPT - $ScriptName in $Mode mode." $LogFile
-TK_WriteLog "I" "Using Domain Controller $DomainCtrl"
-if ($mode -eq "Export") {TK_WriteLog "I" "Exporting GPO Objects to $Folder" $LogFile}
-if ($mode -eq "Import") {TK_WriteLog "I" "Importing GPO Objects from $Folder" $LogFile}
+TK_WriteLog "I" "Using Domain Controller $DomainCtrl" $LogFile
+if ($mode -eq "export") {TK_WriteLog "I" "Exporting GPO Objects to $Folder" $LogFile}
+if ($mode -eq "import") {TK_WriteLog "I" "Importing GPO Objects from $Folder" $LogFile}
+if ($mode -eq "audit") {TK_WriteLog "I" "Creating GPO Audit Report in $Folder" $LogFile}
+if ($AdminPerms) {TK_WriteLog "I" "Script is running with administrator permissions." $LogFile}
+if (!$AdminPerms) {TK_WriteLog "W" "Script is running without administrator permissions" $LogFile}
 TK_WriteLog "-" "" $LogFile
 
-# Import GPO Powershell Module
-TK_WriteLog -$InformationType "I" "Try to import GPO PowerShell Module." $LogFile
-$ModuleExist = Get-Module -List grouppolicy
-If (!$ModuleExist){
-    TK_WriteLog "E" "PowerShell Module GroupPolicy doesn't exist." $LogFile
-    Write-Host "PowerShell Module GroupPolicy doesn't exist on this machine. Install RSAT Roles or run this script on a Domain Controller (not recommended)." -ForegroundColor Red
-    $a = new-object -comobject wscript.shell 
-    $intAnswer = $a.popup("Do you want to install the RSAT Tools?", 0,"Install GPMC and RSAT",4) 
-    If ($intAnswer -eq 6) { 
-        try {
-            Install-WindowsFeature GPMC,RSAT-ADDS-Tools
-            TK_WriteLog "S" "The windows features were installed successfully!" $LogFile
-            } 
-            catch {
-            TK_WriteLog "E" "An error occurred while installing the windows features (error: $($error[0]))" $LogFile
-            Exit 1
-            } 
-    } else { 
-        Write-Host "PowerShell Module GroupPolicy doesn't exist on this machine. Install RSAT Roles manually or run this script on a Domain Controller (not recommended)." -ForegroundColor Red
-        Exit 1 
-    } 
-    
-    
-    exit 1
-}
+# Import PowerShell Module
+TK_ImportModule grouppolicy
 
-import-module grouppolicy
-
- switch ($Mode){
+switch ($Mode){
     "Export" {TK_ExportGPOs; break}
     "Import" {TK_ImportGPOs; break}
+    "Audit" {TK_AuditGPOs; break}
 }
-exit 0
+
+TK_WriteLog "I" "Script finished succesful." $LogFile
+Write-Host "Script finished succesful.`n`r" -ForegroundColor Green
+Exit 0
 
