@@ -58,7 +58,7 @@
 
  .NOTES
         Author        : Thomas Krampe | thomas.krampe@myctx.net
-        Version       : 1.0
+        Version       : 1.3
         Creation date : 26.07.2018 | v0.1 | Initial script
                       : 30.07.2018 | v1.0 | Release to GitHub
                       : 02.08.2018 | v1.1 | Provide Domain informations
