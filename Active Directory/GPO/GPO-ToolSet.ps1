@@ -243,7 +243,7 @@ function TK_ImportGPOs {
         New-GPO -Name $Name -Domain $Domain -Server $Server
         TK_WriteLog "S" "GPO Object $Name in Domain $Domain succesfully created." $LogFile
         Import-GPO -TargetName $Name -Path $ImportPath -BackupId $ID.Name -Domain $Domain -Server $Server
-        TK_WriteLog "S" "GPO Import $Name with ID $($id.name) succesfully imported."
+        TK_WriteLog "S" "GPO Import $Name with ID $($id.name) succesfully imported." $LogFile
         }
     }
 
