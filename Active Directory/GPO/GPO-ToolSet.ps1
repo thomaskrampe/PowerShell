@@ -63,7 +63,8 @@
                       : 30.07.2018 | v1.0 | Release to GitHub
                       : 02.08.2018 | v1.1 | Provide Domain informations
                       : 13.08.2018 | v1.2 | Customizations
-        Last change   : 23.08.2018 | v1.3 | Add more functionality
+                      : 23.08.2018 | v1.3 | Add more functionality
+        Last change   : 07.09.2018 | v1.4 | Fix Export Logfile bug
 
         IMPORTANT NOTICE
         ----------------
