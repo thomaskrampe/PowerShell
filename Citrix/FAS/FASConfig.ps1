@@ -17,7 +17,7 @@
         FASConfig.ps1 -Mode Audit
         
  .LINK
-        https://github.com/thomaskrampe/PowerShell/blob/master/Active%20Directory/GPO/GPO-ToolSet.ps1
+        https://github.com/thomaskrampe/PowerShell/blob/master/Citrix/FAS/FASConfig.ps1
 
  .NOTES
         Author        : Thomas Krampe | thomas.krampe@myctx.net
