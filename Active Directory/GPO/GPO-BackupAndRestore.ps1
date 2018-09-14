@@ -39,7 +39,7 @@
 
 Param(
 [Parameter(Mandatory=$True)]
-[ValidateSet(�Export�, �Import�)]
+[ValidateSet("Export", "Import")]
 [string]$Mode
  )
  
@@ -60,7 +60,7 @@ $TDOmainC = "targetdc."+$TDomain # Target Domain Controller
 
  
 function Export-GPOs {
-    $GPO=Get-GPO �All
+    $GPO=Get-GPO -All
     foreach ($Entry in $GPO) {
         $Path=$ExportFolder+$entry.Displayname
         New-Item -ItemType directory -Path $Path
