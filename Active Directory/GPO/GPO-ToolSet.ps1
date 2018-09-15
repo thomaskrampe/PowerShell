@@ -7,6 +7,7 @@
         - Ex- and Importing GPO's for e.g. GPO migration
         - Creating version reports as CSV
         - Compare GPO settings
+        - CleanUp all unlinked GPO's ### Careful please ###
 
         Logfiles are written to C:\_Logs by default
 
@@ -15,6 +16,7 @@
         Import
         Audit
         Compare
+        CleanUp
 
  .PARAMETER Prefix
         Only required (not mandatory) if mode is Import
@@ -53,6 +55,9 @@
         GPO-ToolSet.ps1 -Mode Compare -GPONames "GPO1,GPO2" -user
         GPO-ToolSet.ps1 -Mode Compare -GPONames "GPO1,GPO2" -computer
 
+        Mode CleanUp
+        GPO-ToolSet.ps1 -Mode CleanUp
+
  .LINK
         https://github.com/thomaskrampe/PowerShell/blob/master/Active%20Directory/GPO/GPO-ToolSet.ps1
 
@@ -64,7 +69,8 @@
                       : 02.08.2018 | v1.1 | Provide Domain informations
                       : 13.08.2018 | v1.2 | Customizations
                       : 23.08.2018 | v1.3 | Add more functionality
-        Last change   : 07.09.2018 | v1.4 | Fix Export Logfile bug
+                      : 07.09.2018 | v1.4 | Fix Export Logfile bug
+        Last cahnge   : 15.09.2018 | v1.5 | Add the CleanUp part
 
         IMPORTANT NOTICE
         ----------------
@@ -79,7 +85,7 @@
         
 # Script parameter        
 Param(
-    [Parameter(Mandatory=$True)][ValidateSet("Export", "Import", "Audit","Compare")][string]$Mode,
+    [Parameter(Mandatory=$True)][ValidateSet("Export", "Import", "Audit","Compare","CleanUp")][string]$Mode,
     [string]$Prefix,
     [string]$Suffix,
     [string]$Folder = "C:\_GPO-Toolset\",
@@ -481,6 +487,38 @@ Function TK_GPOCompare {
     }
 }
 
+function TK_GPONotLinked($xmldata){  
+    If ($xmldata.GPO.LinksTo -eq $null) {  
+        Return $true  
+    }  
+      
+    Return $false  
+} 
+
+Function TK_GPOCleanUp {
+    $unlinkedGPOs = @()
+    TK_WriteLog "I" "Collect GPO's and verify link state." $LogFile
+    Write-Host "Collect GPO's and verify link state. Depending on the count it can take a while. Please wait.`n" -Foregroundcolor Yellow
+    Get-GPO -All | ForEach { $gpo = ($_.ID) ; $_ | Get-GPOReport -ReportType xml | ForEach { If (TK_GPONotLinked([xml]$_)){$unlinkedGPOs += $gpo} }}  
+  
+    If ($unlinkedGPOs.Count -eq 0) {  
+        Write-Host "No unlinked GPO's found. The script has not removed any GPOs`n" -ForegroundColor Yellow 
+        TK_WriteLog "I" "No Unlinked GPO's Found. The script has not removed any GPOs." $LogFile
+    }  
+    Else {  
+        # Attention this part is the dangerous part!!!  
+        TK_WriteLog "I" "$($unlinkedGPOs.Count) in total found." $LogFile
+        
+        foreach ($unlinkedGPO in $unlinkedGPOs) { 
+            $GPOInfo = Get-GPO -guid $unlinkedGPO
+            Write-Host "Remove unlinked GPO $($GPOInfo.DisplayName)." -ForegroundColor Yellow
+            TK_WriteLog "I" "Remove unlinkked GPO $($GPOInfo.DisplayName)." $LogFile
+            Get-gpo -guid $unlinkedGPO | Remove-gpo  
+            TK_WriteLog "S" "GPO $($GPOInfo.DisplayName) succesful removed." $LogFile
+        } 
+    } 
+}
+
 # -------------------------------------------------------------------------------------------------
 # MAIN SECTION
 # -------------------------------------------------------------------------------------------------
@@ -524,6 +562,7 @@ switch ($Mode){
         TK_GPOCompare -GPOReport $GPOReport -User $User -Computer $Computer
         break
     }
+    "CleanUp" {TK_GPOCleanUp; break}
 }
 
 TK_WriteLog "I" "FINISHED - Script finished succesful." $LogFile
