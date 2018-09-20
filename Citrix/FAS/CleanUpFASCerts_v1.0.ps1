@@ -11,12 +11,14 @@
         Audit
         
  .EXAMPLE
+        Audit
+        CleanUpFASCerts.ps1 
         
-        CleanUpFASCerts.ps1 -mode Audit
-        CleanUpFASCerts.ps1 -mode Delete
+        Delete
+        CleanUpFASCerts.ps1 -delete
         
  .LINK
-        https://github.com/thomaskrampe/PowerShell/blob/master/Active%20Directory/GPO/GPO-ToolSet.ps1
+        https://github.com/thomaskrampe/PowerShell/blob/master/Citrix/FAS/CleanUpFASCerts_v1.0.ps1
 
  .NOTES
         Author        : Thomas Krampe | thomas.krampe@myctx.net
