@@ -22,7 +22,7 @@
 
  .NOTES
         Author        : Thomas Krampe | thomas.krampe@myctx.net
-        Version       : 1.0
+        Version       : 1.1
         Creation date : 19.09.2018 | v0.1 | Initial script
                       : 20.09.2018 | v1.0 | Release to Github
         Last change   : 12.11.2018 | v1.1 | Remove Typo in var $FileLength
