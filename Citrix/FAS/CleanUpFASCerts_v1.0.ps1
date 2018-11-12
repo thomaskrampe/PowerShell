@@ -24,7 +24,8 @@
         Author        : Thomas Krampe | thomas.krampe@myctx.net
         Version       : 1.0
         Creation date : 19.09.2018 | v0.1 | Initial script
-        Last change   : 20.09.2018 | v1.0 | Release to Github
+                      : 20.09.2018 | v1.0 | Release to Github
+        Last change   : 12.11.2018 | v1.1 | Remove Typo in var $FileLength
 
         IMPORTANT NOTICE
         ----------------
