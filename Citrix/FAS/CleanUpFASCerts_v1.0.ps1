@@ -189,7 +189,7 @@ function TK_GetCaTemplate {
     
     Process {
         TK_WriteLog "I" "Get template information for template $Filter." $LogFile
-        $FilterLegth = ("msPKI-Cert-Template-OID=").Length+3
+        $FilterLength = ("msPKI-Cert-Template-OID=").Length+4
         $AllCATemplates = Invoke-Expression "certutil.exe -catemplates -v | select-string msPKI-Cert-Template-OID"
         $AllCATemplates | foreach {
             $Template = ($_.line).Substring($FilterLength)
