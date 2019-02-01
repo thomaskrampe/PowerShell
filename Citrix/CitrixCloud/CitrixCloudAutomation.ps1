@@ -30,20 +30,27 @@
         HEREIN, NOT FOR DIRECT, INCIDENTIAL, CONSEQUENTIAL OR ANY OTHER DAMAGES RESULTING FROM FURNISHING,        
         PERFORMANCE, OR USE OF THIS SCRIPT, EVEN IF THOMAS KRAMPE HAS BEEN ADVISED OF THE POSSIBILITY        
         OF SUCH DAMAGES IN ADVANCE.
+
+        CREDITS
+        -------
+        Thanks to Aaron Parker <https://stealthpuppy.com> for the initial on-premise script.
+
 #>
 
 # -------------------------------------------------------------------------------------------------
 # Infrastructure variables
 # -------------------------------------------------------------------------------------------------
-$xdControllers = 'cloudcon01.myctxcloud.local'
+# Citrix Cloud infrastructure variables
+$CCxdControllers = 'cloudcon01.myctxcloud.local'
 $CCcustomerID  = 'ThomasKrampe'
 $CCsecureClientFile = 'C:\tmp\CloudPoSH.csv'
 
 # Azure connection and storage resources
 # These need to be configured in Studio prior to running this script
 # This script is hypervisor and management agnostic - just point to the right infrastructure
-$storageResource = "AzureWE" 
-$hostResource = "Visual Studio Premium with MSDN" 
+$AZstorageResource = "AzureWE" 
+$AZhostResource = "Visual Studio Premium with MSDN" 
+$AZVMSize = "Standard_B2ms"
 
 # Machine catalog properties
 $machineCatalogName = "TEST02-MC"
@@ -56,10 +63,8 @@ $allocType = "Random" # Possible values: Static, Random
 $persistChanges = "OnLocal" # Possible values: OnLocal, Discard, OnPvD
 $provType = "MCS" # Possible values: Manual, MCS, PVS
 $sessionSupport = "MultiSession" # Possible values: SingleSession, MultiSession
-$VMSize = "Standard_B2ms"
-$masterImage ="WIN81*"
-$vCPUs = 2
-$VRAM = 2048
+$masterVMName = "cloudmaster*"
+$masterRG = "CitrixCloudRG"
 
 # -------------------------------------------------------------------------------------------------
 # Global Error handling and verbose output
@@ -81,6 +86,25 @@ if (!(Test-Path $LogDir)) { New-Item -Path $LogDir -ItemType directory | Out-Nul
 
 # Create new log file (overwrite existing one)
 New-Item $LogFile -ItemType "file" -force | Out-Null
+
+# -------------------------------------------------------------------------------------------------
+# Load the Citrix PowerShell modules
+# -------------------------------------------------------------------------------------------------
+TK_WriteLog "I" "Loading Citrix Remote Powershell Module." $LogFile
+Add-PSSnapin Citrix*
+
+TK_WriteLog "I" "Citrix Cloud Authentication." $LogFile
+if (Test-Path $CCSecureClientFile) { 
+    TK_WriteLog "S" "Create authentication profile with Customer ID $CCcustomerID and Token information from $CCSecureClientFile." $LogFile
+    Set-XDCredentials -ProfileType CloudAPI -CustomerId $CCcustomerID -SecureClientFile $CCSecureClientFile -StoreAs default 
+    Get-XDAuthentication -ProfileName default
+    }
+    else {
+        TK_WriteLog "E" "File not found: Authentication with secure client file $CCSecureClientFile failed." $LogFile
+        TK_WriteLog "I" "Open authentication dialog." $LogFile
+        Get-XdAuthentication 
+    }
+
 
 # -------------------------------------------------------------------------------------------------
 # FUNCTIONS (don't change anything below)
@@ -142,9 +166,9 @@ function TK_WriteLog {
 function TK_CreateMachineCatalog {
         <#
             .SYNOPSIS
-                
+                Create a machine catalog in Citrix Cloud
             .DESCRIPTION
-               
+                Create a machine catolog in Citrix Cloud   
             .PARAMETER xxx
                 
             .EXAMPLE
@@ -162,19 +186,20 @@ function TK_CreateMachineCatalog {
         process {
             # Get information from Citrix Cloud hosting environment 
             TK_WriteLog "I" "Gathering connection informations from Citrix Cloud infrastructure." $LogFile
-            # $hostingUnit = Get-ChildItem "XDHyp:\HostingUnits" | Where-Object { $_.PSChildName -like $storageResource } | Select-Object PSChildName, PsPath
+            # $hostingUnit = Get-ChildItem "XDHyp:\HostingUnits" | Where-Object { $_.PSChildName -like $AZstorageResource } | Select-Object PSChildName, PsPath
             # $hostConnection = Get-ChildItem "XDHyp:\Connections" | Where-Object { $_.PSChildName -like $hostResource }
             # $brokerHypConnection = Get-BrokerHypervisorConnection -HypHypervisorConnectionUid $hostConnection.HypervisorConnectionUid
             # $brokerServiceGroup = Get-ConfigServiceGroup -ServiceType 'Broker' -MaxRecordCount 2147483647
 
-            # Create a Machine Catalog. 
+            # Create a empty Machine Catalog 
             TK_WriteLog "I" "Creating machine catalog. Name: $machineCatalogName; Description: $machineCatalogDesc; Allocation: $allocType" $LogFile
             $brokerCatalog = New-BrokerCatalog -AllocationType $allocType -Description $machineCatalogDesc -Name $machineCatalogName -PersistUserChanges $persistChanges -ProvisioningType $provType -SessionSupport $sessionSupport
-            # The identity pool is used to store AD machine accounts
+            
+            # Create a identity pool to store AD machine accounts
             TK_WriteLog "I" "Creating a new identity pool for machine accounts." $LogFile
             $identPool = New-AcctIdentityPool -Domain $domain -IdentityPoolName $machineCatalogName -NamingScheme $namingScheme -NamingSchemeType $namingSchemeType -OU $orgUnit
 
-            # Creates/Updates metadata key-value pairs for the catalog (no idea why).
+            # Update metadata key-value pairs for the catalog.
             TK_WriteLog "I" "Retrieving the newly created machine catalog." $LogFile
             $catalogUid = Get-BrokerCatalog | Where-Object { $_.Name -eq $machineCatalogName } | Select-Object Uid
             $guid = [guid]::NewGuid()
@@ -187,18 +212,25 @@ function TK_CreateMachineCatalog {
                 TK_WriteLog "S"  "Provisioning scheme name is available." $LogFile
 
                 # Get the master VM image from the same storage resource we're going to deploy to. Could pull this from another storage resource available to the host
-                TK_WriteLog "I" "Getting the master image details for the new catalog: $masterImage" $LogFile
-                $VM = Get-ChildItem "XDHyp:\HostingUnits\$storageResource" | Where-Object { $_.ObjectType -eq "VM" -and $_.PSChildName -like $masterImage }
+                TK_WriteLog "I" "Getting the master image details for the new catalog: $masterVMName" $LogFile
+                $VM = Get-ChildItem "XDHyp:\HostingUnits\$AZstorageResource\vm.folder" | Where-Object { $_.ObjectType -eq "VM" -and $_.PSChildName -like $masterVMName }
                 # Get the snapshot details. This code will assume a single snapshot exists - could add additional checking to grab last snapshot or check for no snapshots.
                 $VMDetails = Get-ChildItem $VM.FullPath
-                $ServiceOffering = Get-ChildItem "XDHyp:\HostingUnits\AzureWE\serviceoffering.folder" | Where-Object { $_.Name -like $VMSize }
+                $ServiceOffering = Get-ChildItem "XDHyp:\HostingUnits\$AZstorageResource\serviceoffering.folder" | Where-Object { $_.Name -like $AZVMSize }
   
                 # Create a new provisioning scheme - the configuration of VMs to deploy. This will copy the master image to the target datastore.
                 TK_WriteLog "I" "Creating new provisioning scheme using $VMDetails.FullPath" $LogFile
                 # Provision VMs based on the selected snapshot.
-                # Old: $provTaskId = New-ProvScheme -ProvisioningSchemeName $machineCatalogName -HostingUnitName $storageResource -MasterImageVM $VMDetails.FullPath -CleanOnBoot -IdentityPoolName $identPool.IdentityPoolName -VMCpuCount $vCPUs -VMMemoryMB $vRAM -RunAsynchronously
+                # Old: $provTaskId = New-ProvScheme -ProvisioningSchemeName $machineCatalogName -HostingUnitName $AZstorageResource -MasterImageVM $VMDetails.FullPath -CleanOnBoot -IdentityPoolName $identPool.IdentityPoolName -VMCpuCount $vCPUs -VMMemoryMB $vRAM -RunAsynchronously
 # --> Hier noch mit Variablen anpassen
-                $provTaskId = New-ProvScheme -ProvisioningSchemeName "TEST01-MC" -HostingUnitName "AzureWE" -MasterImageVM "XDHyp:\HostingUnits\AzureWE\image.folder\CitrixCloudRG.resourcegroup\cloudmaster_OsDisk_1_34219e4d6a6a40258dbe65941122b6e4.manageddisk" -CleanOnBoot -IdentityPoolName "TEST01-MC" -CustomProperties "<CustomProperties xmlns=`"http://schemas.citrix.com/2014/xd/machinecreation`" xmlns:xsi=`"http://www.w3.org/2001/XMLSchema-instance`"><Property xsi:type=`"StringProperty`" Name=`"UseManagedDisks`" Value=`"true`" /><Property xsi:type=`"StringProperty`" Name=`"StorageAccountType`" Value=`"Premium_LRS`" /><Property xsi:type=`"StringProperty`" Name=`"LicenseType`" Value=`"Windows_Server`" /><Property xsi:type=`"StringProperty`" Name=`"ResourceGroups`" Value=`"TEST01-RG`" /></CustomProperties>" -InitialBatchSizeHint 1 -NetworkMapping @{"0"="XDHyp:\HostingUnits\AzureWE\\virtualprivatecloud.folder\CitrixCloudRG.resourcegroup\CitrixCloudRG-vnet.virtualprivatecloud\default.network"} -RunAsynchronously -Scope @() -SecurityGroup @() -ServiceOffering "XDHyp:\HostingUnits\AzureWE\serviceoffering.folder\Standard_B2ms.serviceoffering"
+                $MasterImageVM = Get-ChildItem "XDHyp:\HostingUnits\$AZstorageResource\image.folder\$masterRG.resourcegroup" | Where-Object { $_.ObjectTypeName -eq "manageddisk" -and $_.FullName -like $masterVMName }
+                $MasterImageVMDiskPath = $MasterImageVM.FullPath
+                $ServiceOffering = Get-ChildItem "XDHyp:\HostingUnits\$AZstorageResource\serviceoffering.folder" | Where-Object { $_.Name -like $AZVMSize }
+                $ServiceOfferingPath = $ServiceOffering.FullPath
+                $MasterImageNetwork = Get-ChildItem "XDHyp:\HostingUnits\$AZstorageResource\virtualprivatecloud.folder\$masterRG.resourcegroup\$masterRG-vnet.virtualprivatecloud"
+                $MasterImageNetworkPath = $MasterImageNetwork.FullPath
+
+                $provTaskId = New-ProvScheme -ProvisioningSchemeName $machineCatalogName -HostingUnitName $AZstorageResource -MasterImageVM $MasterImageVMDiskPath -CleanOnBoot -IdentityPoolName $machineCatalogName -CustomProperties "<CustomProperties xmlns=`"http://schemas.citrix.com/2014/xd/machinecreation`" xmlns:xsi=`"http://www.w3.org/2001/XMLSchema-instance`"><Property xsi:type=`"StringProperty`" Name=`"UseManagedDisks`" Value=`"true`" /><Property xsi:type=`"StringProperty`" Name=`"StorageAccountType`" Value=`"Premium_LRS`" /><Property xsi:type=`"StringProperty`" Name=`"LicenseType`" Value=`"Windows_Server`" /><Property xsi:type=`"StringProperty`" Name=`"ResourceGroups`" Value=`"TEST01-RG`" /></CustomProperties>" -InitialBatchSizeHint 1 -NetworkMapping @{"0"=$MasterImageNetworkPath} -RunAsynchronously -Scope @() -SecurityGroup @() -ServiceOffering $ServiceOfferingPath
                 $provTask = Get-ProvTask -TaskId $provTaskId
 # <--
                 # Track the progress of copying the master image
@@ -220,8 +252,8 @@ function TK_CreateMachineCatalog {
                     Set-BrokerCatalog -Name $provScheme.ProvisioningSchemeName -ProvisioningSchemeId $provScheme.ProvisioningSchemeUid
 
                     # Associate a specific set of controllers to the provisioning scheme. This steps appears to be optional.
-                    TK_WriteLog "I" "Associating controllers $xdControllers to the provisioning scheme." $LogFile
-                    Add-ProvSchemeControllerAddress -ControllerAddress @($xdControllers) -ProvisioningSchemeName $provScheme.ProvisioningSchemeName
+                    TK_WriteLog "I" "Associating controllers $CCxdControllers to the provisioning scheme." $LogFile
+                    Add-ProvSchemeControllerAddress -ControllerAddress @($CCxdControllers) -ProvisioningSchemeName $provScheme.ProvisioningSchemeName
 
                     # Provisiong the actual machines and map them to AD accounts, track the progress while this is happening
                     TK_WriteLog "I" "Creating the machine accounts in AD." $LogFile
@@ -269,23 +301,6 @@ function TK_CreateMachineCatalog {
 
 
 
-# -------------------------------------------------------------------------------------------------
-# Load the Citrix PowerShell modules
-# -------------------------------------------------------------------------------------------------
-TK_WriteLog "I" "Loading Citrix Remote Powershell Module." $LogFile
-Add-PSSnapin Citrix*
-
-TK_WriteLog "I" "Citrix Cloud Authentication." $LogFile
-if (Test-Path $CCSecureClientFile) { 
-    TK_WriteLog "S" "Create authentication profile with Customer ID $CCcustomerID and Token information from $CCSecureClientFile." $LogFile
-    Set-XDCredentials -ProfileType CloudAPI -CustomerId $CCcustomerID -SecureClientFile $CCSecureClientFile -StoreAs default 
-    Get-XDAuthentication -ProfileName default
-    }
-    else {
-        TK_WriteLog "E" "File not found: Authentication with secure client file $CCSecureClientFile failed." $LogFile
-        TK_WriteLog "I" "Open authentication dialog." $LogFile
-        Get-XdAuthentication 
-    }
 
 # -------------------------------------------------------------------------------------------------
 # Main part - Creating Machine Catalog
