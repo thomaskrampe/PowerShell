@@ -241,7 +241,7 @@ function TK_CreateMachineCatalog {
                     }
 
                     # Assign the newly created virtual machines to the machine catalog
-                    $provVMs = Get-ProvVM -AdminAddress $adminAddress -ProvisioningSchemeUid $provScheme.ProvisioningSchemeUid
+                    $provVMs = Get-ProvVM -ProvisioningSchemeUid $provScheme.ProvisioningSchemeUid
                     TK_WriteLog "I" "Assigning the virtual machines to the new machine catalog." $LogFile
                     ForEach ( $provVM in $provVMs ) {
                         TK_WriteLog "I" "Locking VM $provVM.ADAccountName" $LogFile
@@ -249,11 +249,12 @@ function TK_CreateMachineCatalog {
                         TK_WriteLog "I" "Adding VM $provVM.ADAccountName" $LogFile
                         New-BrokerMachine -CatalogUid $catalogUid.Uid -MachineName $provVM.ADAccountName
                     }
-                    TK_WriteLog "I" "Machine catalog creation complete." $LogFile
+                    TK_WriteLog "S" "Machine catalog creation complete succesful." $LogFile
 
                 } Else {
                     # If provisioning task fails, provide error
                     # Check that the hypervisor management and storage resources do no have errors. Run 'Test Connection', 'Test Resources' in Citrix Studio
+                    TK_WriteLog "E" "Provisioning task failed with error: [$provTask.TaskState] $provTask.TerminatingError" $LogFile
                     Write-Error "Provisioning task failed with error: [$provTask.TaskState] $provTask.TerminatingError"
                 }
             }
