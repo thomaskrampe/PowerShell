@@ -65,6 +65,7 @@ $provType = "MCS" # Possible values: Manual, MCS, PVS
 $sessionSupport = "MultiSession" # Possible values: SingleSession, MultiSession
 $masterVMName = "cloudmaster*"
 $masterRG = "CitrixCloudRG"
+$targetRG = "TEST01-RG"
 
 # -------------------------------------------------------------------------------------------------
 # Global Error handling and verbose output
@@ -229,8 +230,8 @@ function TK_CreateMachineCatalog {
                 $ServiceOfferingPath = $ServiceOffering.FullPath
                 $MasterImageNetwork = Get-ChildItem "XDHyp:\HostingUnits\$AZstorageResource\virtualprivatecloud.folder\$masterRG.resourcegroup\$masterRG-vnet.virtualprivatecloud"
                 $MasterImageNetworkPath = $MasterImageNetwork.FullPath
-
-                $provTaskId = New-ProvScheme -ProvisioningSchemeName $machineCatalogName -HostingUnitName $AZstorageResource -MasterImageVM $MasterImageVMDiskPath -CleanOnBoot -IdentityPoolName $machineCatalogName -CustomProperties "<CustomProperties xmlns=`"http://schemas.citrix.com/2014/xd/machinecreation`" xmlns:xsi=`"http://www.w3.org/2001/XMLSchema-instance`"><Property xsi:type=`"StringProperty`" Name=`"UseManagedDisks`" Value=`"true`" /><Property xsi:type=`"StringProperty`" Name=`"StorageAccountType`" Value=`"Premium_LRS`" /><Property xsi:type=`"StringProperty`" Name=`"LicenseType`" Value=`"Windows_Server`" /><Property xsi:type=`"StringProperty`" Name=`"ResourceGroups`" Value=`"TEST01-RG`" /></CustomProperties>" -InitialBatchSizeHint 1 -NetworkMapping @{"0"=$MasterImageNetworkPath} -RunAsynchronously -Scope @() -SecurityGroup @() -ServiceOffering $ServiceOfferingPath
+                # $customProperties = "<CustomProperties xmlns=`"http://schemas.citrix.com/2014/xd/machinecreation`" xmlns:xsi=`"http://www.w3.org/2001/XMLSchema-instance`"><Property xsi:type=`"StringProperty`" Name=`"UseManagedDisks`" Value=`"true`" /><Property xsi:type=`"StringProperty`" Name=`"StorageAccountType`" Value=`"Premium_LRS`" /><Property xsi:type=`"StringProperty`" Name=`"LicenseType`" Value=`"Windows_Server`" /><Property xsi:type=`"StringProperty`" Name=`"ResourceGroups`" Value=`"$targetRG`" /></CustomProperties>"
+                $provTaskId = New-ProvScheme -ProvisioningSchemeName $machineCatalogName -HostingUnitName $AZstorageResource -MasterImageVM $MasterImageVMDiskPath -CleanOnBoot -IdentityPoolName $machineCatalogName -CustomProperties "<CustomProperties xmlns=`"http://schemas.citrix.com/2014/xd/machinecreation`" xmlns:xsi=`"http://www.w3.org/2001/XMLSchema-instance`"><Property xsi:type=`"StringProperty`" Name=`"UseManagedDisks`" Value=`"true`" /><Property xsi:type=`"StringProperty`" Name=`"StorageAccountType`" Value=`"Premium_LRS`" /><Property xsi:type=`"StringProperty`" Name=`"LicenseType`" Value=`"Windows_Server`" /><Property xsi:type=`"StringProperty`" Name=`"ResourceGroups`" Value=`"$targetRG`" /></CustomProperties>" -InitialBatchSizeHint 1 -NetworkMapping @{"0"=$MasterImageNetworkPath} -RunAsynchronously -Scope @() -SecurityGroup @() -ServiceOffering $ServiceOfferingPath
                 $provTask = Get-ProvTask -TaskId $provTaskId
 # <--
                 # Track the progress of copying the master image
