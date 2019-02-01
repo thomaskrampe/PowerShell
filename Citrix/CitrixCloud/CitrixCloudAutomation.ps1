@@ -65,7 +65,8 @@ $provType = "MCS" # Possible values: Manual, MCS, PVS
 $sessionSupport = "MultiSession" # Possible values: SingleSession, MultiSession
 $masterVMName = "cloudmaster*"
 $masterRG = "CitrixCloudRG"
-$targetRG = "TEST01-RG"
+$targetRG = "TEST02-RG"
+$machineCount = 1
 
 # -------------------------------------------------------------------------------------------------
 # Global Error handling and verbose output
@@ -88,23 +89,7 @@ if (!(Test-Path $LogDir)) { New-Item -Path $LogDir -ItemType directory | Out-Nul
 # Create new log file (overwrite existing one)
 New-Item $LogFile -ItemType "file" -force | Out-Null
 
-# -------------------------------------------------------------------------------------------------
-# Load the Citrix PowerShell modules
-# -------------------------------------------------------------------------------------------------
-TK_WriteLog "I" "Loading Citrix Remote Powershell Module." $LogFile
-Add-PSSnapin Citrix*
 
-TK_WriteLog "I" "Citrix Cloud Authentication." $LogFile
-if (Test-Path $CCSecureClientFile) { 
-    TK_WriteLog "S" "Create authentication profile with Customer ID $CCcustomerID and Token information from $CCSecureClientFile." $LogFile
-    Set-XDCredentials -ProfileType CloudAPI -CustomerId $CCcustomerID -SecureClientFile $CCSecureClientFile -StoreAs default 
-    Get-XDAuthentication -ProfileName default
-    }
-    else {
-        TK_WriteLog "E" "File not found: Authentication with secure client file $CCSecureClientFile failed." $LogFile
-        TK_WriteLog "I" "Open authentication dialog." $LogFile
-        Get-XdAuthentication 
-    }
 
 
 # -------------------------------------------------------------------------------------------------
@@ -175,12 +160,7 @@ function TK_CreateMachineCatalog {
             .EXAMPLE
             
         #>
-        Param( 
-            [Parameter(Mandatory=$true)][String]$machineCatalogName,
-            [Parameter(Mandatory=$true)][String]$machineCatalogDesc,
-            [Parameter(Mandatory=$true)][String]$allocType
-        )
-
+        
         begin {
         }
 
@@ -255,7 +235,7 @@ function TK_CreateMachineCatalog {
 
                     # Provisiong the actual machines and map them to AD accounts, track the progress while this is happening
                     TK_WriteLog "I" "Creating the machine accounts in AD." $LogFile
-                    $adAccounts = New-AcctADAccount -Count 5 -IdentityPoolUid $identPool.IdentityPoolUid
+                    $adAccounts = New-AcctADAccount -Count $machineCount -IdentityPoolUid $identPool.IdentityPoolUid
                     TK_WriteLog "I" "Creating the virtual machines." $LogFile
                     $provTaskId = New-ProvVM -ADAccountName @($adAccounts.SuccessfulAccounts) -ProvisioningSchemeName $provScheme.ProvisioningSchemeName -RunAsynchronously
                     $provTask = Get-ProvTask -TaskId $provTaskId
@@ -296,7 +276,23 @@ function TK_CreateMachineCatalog {
 
     }
 
+# -------------------------------------------------------------------------------------------------
+# Load the Citrix PowerShell modules
+# -------------------------------------------------------------------------------------------------
+TK_WriteLog "I" "Loading Citrix Remote Powershell Module." $LogFile
+Add-PSSnapin Citrix*
 
+TK_WriteLog "I" "Citrix Cloud Authentication." $LogFile
+if (Test-Path $CCSecureClientFile) { 
+    TK_WriteLog "S" "Create authentication profile with Customer ID $CCcustomerID and Token information from $CCSecureClientFile." $LogFile
+    Set-XDCredentials -ProfileType CloudAPI -CustomerId $CCcustomerID -SecureClientFile $CCSecureClientFile -StoreAs default 
+    Get-XDAuthentication -ProfileName default
+    }
+    else {
+        TK_WriteLog "E" "File not found: Authentication with secure client file $CCSecureClientFile failed." $LogFile
+        TK_WriteLog "I" "Open authentication dialog." $LogFile
+        Get-XdAuthentication 
+    }
 
 
 
