@@ -221,16 +221,13 @@ function TK_CreateMachineCatalog {
   
                 # Create a new provisioning scheme - the configuration of VMs to deploy. This will copy the master image to the target datastore.
                 TK_WriteLog "I" "Creating new provisioning scheme using $VMDetails.FullPath" $LogFile
-                # Provision VMs based on the selected snapshot.
-                # Old: $provTaskId = New-ProvScheme -ProvisioningSchemeName $machineCatalogName -HostingUnitName $AZstorageResource -MasterImageVM $VMDetails.FullPath -CleanOnBoot -IdentityPoolName $identPool.IdentityPoolName -VMCpuCount $vCPUs -VMMemoryMB $vRAM -RunAsynchronously
-# --> Hier noch mit Variablen anpassen
+                # Provision VMs based on the selected Azure resoucre.
                 $MasterImageVM = Get-ChildItem "XDHyp:\HostingUnits\$AZstorageResource\image.folder\$masterRG.resourcegroup" | Where-Object { $_.ObjectTypeName -eq "manageddisk" -and $_.FullName -like $masterVMName }
                 $MasterImageVMDiskPath = $MasterImageVM.FullPath
                 $ServiceOffering = Get-ChildItem "XDHyp:\HostingUnits\$AZstorageResource\serviceoffering.folder" | Where-Object { $_.Name -like $AZVMSize }
                 $ServiceOfferingPath = $ServiceOffering.FullPath
                 $MasterImageNetwork = Get-ChildItem "XDHyp:\HostingUnits\$AZstorageResource\virtualprivatecloud.folder\$masterRG.resourcegroup\$masterRG-vnet.virtualprivatecloud"
                 $MasterImageNetworkPath = $MasterImageNetwork.FullPath
-                # $customProperties = "<CustomProperties xmlns=`"http://schemas.citrix.com/2014/xd/machinecreation`" xmlns:xsi=`"http://www.w3.org/2001/XMLSchema-instance`"><Property xsi:type=`"StringProperty`" Name=`"UseManagedDisks`" Value=`"true`" /><Property xsi:type=`"StringProperty`" Name=`"StorageAccountType`" Value=`"Premium_LRS`" /><Property xsi:type=`"StringProperty`" Name=`"LicenseType`" Value=`"Windows_Server`" /><Property xsi:type=`"StringProperty`" Name=`"ResourceGroups`" Value=`"$targetRG`" /></CustomProperties>"
                 $provTaskId = New-ProvScheme -ProvisioningSchemeName $machineCatalogName -HostingUnitName $AZstorageResource -MasterImageVM $MasterImageVMDiskPath -CleanOnBoot -IdentityPoolName $machineCatalogName -CustomProperties "<CustomProperties xmlns=`"http://schemas.citrix.com/2014/xd/machinecreation`" xmlns:xsi=`"http://www.w3.org/2001/XMLSchema-instance`"><Property xsi:type=`"StringProperty`" Name=`"UseManagedDisks`" Value=`"true`" /><Property xsi:type=`"StringProperty`" Name=`"StorageAccountType`" Value=`"Premium_LRS`" /><Property xsi:type=`"StringProperty`" Name=`"LicenseType`" Value=`"Windows_Server`" /><Property xsi:type=`"StringProperty`" Name=`"ResourceGroups`" Value=`"$targetRG`" /></CustomProperties>" -InitialBatchSizeHint 1 -NetworkMapping @{"0"=$MasterImageNetworkPath} -RunAsynchronously -Scope @() -SecurityGroup @() -ServiceOffering $ServiceOfferingPath
                 $provTask = Get-ProvTask -TaskId $provTaskId
 # <--
@@ -308,6 +305,3 @@ function TK_CreateMachineCatalog {
 # -------------------------------------------------------------------------------------------------
 
 TK_CreateMachineCatalog
-
-
-
