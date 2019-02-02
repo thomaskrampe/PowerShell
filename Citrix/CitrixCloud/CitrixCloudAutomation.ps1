@@ -85,13 +85,9 @@ if (!(Test-Path $LogDir)) { New-Item -Path $LogDir -ItemType directory | Out-Nul
 # Create new log file (overwrite existing one)
 New-Item $LogFile -ItemType "file" -force | Out-Null
 
-
-
-
 # -------------------------------------------------------------------------------------------------
 # FUNCTIONS (don't change anything below)
 # -------------------------------------------------------------------------------------------------
-
 function TK_WriteLog {
     <#
             .SYNOPSIS
@@ -162,7 +158,7 @@ function TK_CreateMachineCatalog {
 
         process {
             # Get information from Citrix Cloud hosting environment 
-            TK_WriteLog "I" "Gathering connection informations from Citrix Cloud infrastructure." $LogFile
+            # TK_WriteLog "I" "Gathering connection informations from Citrix Cloud infrastructure." $LogFile
             # $hostingUnit = Get-ChildItem "XDHyp:\HostingUnits" | Where-Object { $_.PSChildName -like $AZstorageResource } | Select-Object PSChildName, PsPath
             # $hostConnection = Get-ChildItem "XDHyp:\Connections" | Where-Object { $_.PSChildName -like $hostResource }
             # $brokerHypConnection = Get-BrokerHypervisorConnection -HypHypervisorConnectionUid $hostConnection.HypervisorConnectionUid
@@ -196,7 +192,7 @@ function TK_CreateMachineCatalog {
                 $ServiceOffering = Get-ChildItem "XDHyp:\HostingUnits\$AZstorageResource\serviceoffering.folder" | Where-Object { $_.Name -like $AZVMSize }
   
                 # Create a new provisioning scheme - the configuration of VMs to deploy. This will copy the master image to the target datastore.
-                TK_WriteLog "I" "Creating new provisioning scheme using $VMDetails.FullPath" $LogFile
+                TK_WriteLog "I" "Creating new provisioning scheme using." $LogFile
                 # Provision VMs based on the selected Azure resoucre.
                 $MasterImageVM = Get-ChildItem "XDHyp:\HostingUnits\$AZstorageResource\image.folder\$masterRG.resourcegroup" | Where-Object { $_.ObjectTypeName -eq "manageddisk" -and $_.FullName -like $masterVMName }
                 $MasterImageVMDiskPath = $MasterImageVM.FullPath
@@ -226,7 +222,7 @@ function TK_CreateMachineCatalog {
                     Set-BrokerCatalog -Name $provScheme.ProvisioningSchemeName -ProvisioningSchemeId $provScheme.ProvisioningSchemeUid
 
                     # Associate a specific set of controllers to the provisioning scheme. This steps appears to be optional.
-                    TK_WriteLog "I" "Associating controllers $CCxdControllers to the provisioning scheme." $LogFile
+                    TK_WriteLog "I" "Associating controllers to the provisioning scheme." $LogFile
                     Add-ProvSchemeControllerAddress -ControllerAddress @($CCxdControllers) -ProvisioningSchemeName $provScheme.ProvisioningSchemeName
 
                     # Provisiong the actual machines and map them to AD accounts, track the progress while this is happening
@@ -272,6 +268,20 @@ function TK_CreateMachineCatalog {
 
     }
 
+function TK_CreateDeliveryGroup {
+        begin {
+        }
+
+        process {
+        }
+
+        end {
+        }
+
+    }
+
+
+    
 # -------------------------------------------------------------------------------------------------
 # Load the Citrix PowerShell modules
 # -------------------------------------------------------------------------------------------------
@@ -289,8 +299,6 @@ if (Test-Path $CCSecureClientFile) {
         TK_WriteLog "I" "Open authentication dialog." $LogFile
         Get-XdAuthentication 
     }
-
-
 
 # -------------------------------------------------------------------------------------------------
 # Main part - Creating Machine Catalog
