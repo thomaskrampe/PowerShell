@@ -281,7 +281,7 @@ function TK_CreateDeliveryGroup {
     }
 
 
-    
+
 # -------------------------------------------------------------------------------------------------
 # Load the Citrix PowerShell modules
 # -------------------------------------------------------------------------------------------------
@@ -290,12 +290,12 @@ Add-PSSnapin Citrix*
 
 TK_WriteLog "I" "Citrix Cloud Authentication." $LogFile
 if (Test-Path $CCSecureClientFile) { 
-    TK_WriteLog "S" "Create authentication profile with Customer ID $CCcustomerID and Token information from $CCSecureClientFile." $LogFile
+    TK_WriteLog "S" "Create authentication profile with Customer ID and Token information." $LogFile
     Set-XDCredentials -ProfileType CloudAPI -CustomerId $CCcustomerID -SecureClientFile $CCSecureClientFile -StoreAs default 
     Get-XDAuthentication -ProfileName default
     }
     else {
-        TK_WriteLog "E" "File not found: Authentication with secure client file $CCSecureClientFile failed." $LogFile
+        TK_WriteLog "E" "File not found: Authentication with secure client file failed." $LogFile
         TK_WriteLog "I" "Open authentication dialog." $LogFile
         Get-XdAuthentication 
     }
