@@ -3,17 +3,13 @@
         CitrixCloudAutomation.ps1 
 
     .DESCRIPTION        
-        Lightweight Script for         
-        - Ex- and Importing GPO's for e.g. GPO migration        
-        - Creating version reports as CSV        
-        - Compare GPO settings        
-        - CleanUp Logfiles are written to Logfiles are written to C:\_Logs by default 
+        Lightweight Script for creating deployments in Citrix Cloud        
     
     .PARAMETER xxx
         xxx
 
     .LINK        
-        https://github.com/thomaskrampe/PowerShell/ 
+        https://github.com/thomaskrampe/PowerShell/tree/master/Citrix/CitrixCloud 
     
     .NOTES       
         Author        : Thomas Krampe | thomas.krampe@myctx.net        
