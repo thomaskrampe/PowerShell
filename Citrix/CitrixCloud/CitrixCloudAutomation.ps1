@@ -386,6 +386,7 @@ function TK_CreateDeliveryGroup {
                 }
             
             } 
+            TK_WriteLog "S" "Delivery Group successful created." $LogFile
         }
     }
 
