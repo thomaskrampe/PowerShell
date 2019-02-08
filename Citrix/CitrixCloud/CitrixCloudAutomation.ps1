@@ -333,7 +333,7 @@ function TK_CreateDeliveryGroup {
                 TK_WriteLog "I" "Getting details for the Machine Catalog: $MCName" $LogFile
                 $machineCatalog = Get-BrokerCatalog -Name $MCName
                 TK_WriteLog "I" "Adding $machineCatalog.UnassignedCount machines to the Desktop Group: $desktopGroupName" $LogFile
-                $machinesCount = Add-BrokerMachinesToDesktopGroup -Catalog $machineCatalog -Count $machineCatalog.UnassignedCount -DesktopGroup $desktopGroup
+                $machinesCount = Add-BrokerMachinesToDesktopGroup -Catalog $machineCatalog -Count $machineCatalog.UnassignedCount -DesktopGroup $CCdesktopGroup
             
                 # Create a new broker user/group object if it doesn't already exist
                 TK_WriteLog "I"  "Creating user/group object in the broker for $assignedGroup" $LogFile
@@ -351,20 +351,20 @@ function TK_CreateDeliveryGroup {
                     If ($Test.Available -eq $False) { $Num = $Num + 1 }
                 } While ($Test.Available -eq $False)
                 TK_WriteLog "I"  "Assigning $brokerUsers.Name to Desktop Catalog: $MCName" $LogFile
-                $EntPolicyRule = New-BrokerEntitlementPolicyRule -Name ($desktopGroupName + "_" + $Num.ToString()) -IncludedUsers $brokerUsers -DesktopGroupUid $desktopGroup.Uid -Enabled $True -IncludedUserFilterEnabled $False
+                $EntPolicyRule = New-BrokerEntitlementPolicyRule -Name ($desktopGroupName + "_" + $Num.ToString()) -IncludedUsers $brokerUsers -DesktopGroupUid $CCdesktopGroup.Uid -Enabled $True -IncludedUserFilterEnabled $False
             
                 # Check whether access rules exist and then create rules for direct access and via Access Gateway
                 $accessPolicyRule = $desktopGroupName + "_Direct"
                 If (Test-BrokerAccessPolicyRuleNameAvailable -Name @($accessPolicyRule) -ErrorAction SilentlyContinue) {
                     TK_WriteLog "I"  "Allowing direct access rule to the Desktop Catalog: $MCName" $LogFile
-                    New-BrokerAccessPolicyRule -Name $accessPolicyRule  -IncludedUsers @($brokerUsers.Name) -AllowedConnections 'NotViaAG' -AllowedProtocols @('HDX','RDP') -AllowRestart $True -DesktopGroupUid $desktopGroup.Uid -Enabled $True -IncludedSmartAccessFilterEnabled $True -IncludedUserFilterEnabled $True
+                    New-BrokerAccessPolicyRule -Name $accessPolicyRule  -IncludedUsers @($brokerUsers.Name) -AllowedConnections 'NotViaAG' -AllowedProtocols @('HDX','RDP') -AllowRestart $True -DesktopGroupUid $CCdesktopGroup.Uid -Enabled $True -IncludedSmartAccessFilterEnabled $True -IncludedUserFilterEnabled $True
                 } Else {
                     TK_WriteLog "E" "Failed to add direct access rule $accessPolicyRule. It already exists." $LogFile
                 }
                 $accessPolicyRule = $desktopGroupName + "_AG"
                 If (Test-BrokerAccessPolicyRuleNameAvailable -Name @($accessPolicyRule) -ErrorAction SilentlyContinue) {
                     TK_WriteLog "I"  "Allowing access via Access Gateway rule to the Desktop Catalog: $MCName" $LogFile
-                    New-BrokerAccessPolicyRule -Name $accessPolicyRule -IncludedUsers @($brokerUsers.Name) -AllowedConnections 'ViaAG' -AllowedProtocols @('HDX','RDP') -AllowRestart $True -DesktopGroupUid $desktopGroup.Uid -Enabled $True -IncludedSmartAccessFilterEnabled $True -IncludedSmartAccessTags @() -IncludedUserFilterEnabled $True
+                    New-BrokerAccessPolicyRule -Name $accessPolicyRule -IncludedUsers @($brokerUsers.Name) -AllowedConnections 'ViaAG' -AllowedProtocols @('HDX','RDP') -AllowRestart $True -DesktopGroupUid $CCdesktopGroup.Uid -Enabled $True -IncludedSmartAccessFilterEnabled $True -IncludedSmartAccessTags @() -IncludedUserFilterEnabled $True
                 } Else {
                     TK_WriteLog "E" "Failed to add Access Gateway rule $accessPolicyRule. It already exists." $LogFile
                 }
@@ -373,14 +373,14 @@ function TK_CreateDeliveryGroup {
                 $powerTimeScheme = "Desktop_Weekdays"
                 If (Test-BrokerPowerTimeSchemeNameAvailable -Name @($powerTimeScheme) -ErrorAction SilentlyContinue) {
                     TK_WriteLog "I" "Adding new power scheme $powerTimeScheme" $LogFile
-                    New-BrokerPowerTimeScheme -DisplayName 'Weekdays' -Name $powerTimeScheme -DaysOfWeek 'Weekdays' -DesktopGroupUid $desktopGroup.Uid -PeakHours @($False,$False,$False,$False,$False,$False,$False,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$False,$False,$False,$False,$False) -PoolSize @(0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0)
+                    New-BrokerPowerTimeScheme -DisplayName 'Weekdays' -Name $powerTimeScheme -DaysOfWeek 'Weekdays' -DesktopGroupUid $CCdesktopGroup.Uid -PeakHours @($False,$False,$False,$False,$False,$False,$False,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$False,$False,$False,$False,$False) -PoolSize @(0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0)
                 } Else {
                     TK_WriteLog "E" "Failed to add power scheme rule $powerTimeScheme. It already exists." $LogFile
                 }
                 $powerTimeScheme = "Desktop_Weekend"
                 If (Test-BrokerPowerTimeSchemeNameAvailable -Name @($powerTimeScheme) -ErrorAction SilentlyContinue) {
                     TK_WriteLog "I" "Adding new power scheme $powerTimeScheme" $LogFile
-                    New-BrokerPowerTimeScheme -DisplayName 'Weekend' -Name $powerTimeScheme -DaysOfWeek 'Weekend' -DesktopGroupUid $desktopGroup.Uid -PeakHours @($False,$False,$False,$False,$False,$False,$False,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$False,$False,$False,$False,$False) -PoolSize @(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+                    New-BrokerPowerTimeScheme -DisplayName 'Weekend' -Name $powerTimeScheme -DaysOfWeek 'Weekend' -DesktopGroupUid $CCdesktopGroup.Uid -PeakHours @($False,$False,$False,$False,$False,$False,$False,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$False,$False,$False,$False,$False) -PoolSize @(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
                 } Else {
                     TK_WriteLog "E" "Failed to add power scheme rule $powerTimeScheme. It already exists." $LogFile
                 }
