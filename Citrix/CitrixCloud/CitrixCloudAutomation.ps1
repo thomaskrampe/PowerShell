@@ -280,7 +280,33 @@ function TK_CreateDeliveryGroup {
 
     }
 
+function TK_CreateAzRG {
 
+    Param( 
+        [Parameter(Mandatory=$true)][String]$AzResourceGroup,
+        [Parameter(Mandatory=$true)][String]$AzRegion
+        )
+    
+    begin {
+        }
+    
+    process {
+        # -------------------------------------------------------------------------------------------------
+        # Prepare Variables
+        # -------------------------------------------------------------------------------------------------
+        $AzRGguid = [guid]::NewGuid()
+        $CCTargetRG = $AzResourceGroup + "-xd-" + $AzRGguid
+            
+        TK_WriteLog "I" "Creating Azure Resource Group $CCTargetRG." $LogFile
+        New-AzResourceGroup -Name $CCTargetRG -location $AzRegion -force
+        
+        Return $CCTargetRG
+        }
+    
+        end {
+        }
+    }
+    
 
 # -------------------------------------------------------------------------------------------------
 # Load the Citrix PowerShell modules
@@ -303,5 +329,7 @@ if (Test-Path $CCSecureClientFile) {
 # -------------------------------------------------------------------------------------------------
 # Main part - Creating Machine Catalog
 # -------------------------------------------------------------------------------------------------
+$CCTargetRG = TK_CreateAzRG -AzResourceGroup $machineCatalogName -AzRegion "WestEurope"
+
 
 TK_CreateMachineCatalog
