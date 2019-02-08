@@ -330,8 +330,8 @@ function TK_CreateDeliveryGroup {
         
             If ($CCdesktopGroup) {
                 # Add machines to the new desktop group. Uses the number of machines available in the target machine catalog
-                TK_WriteLog "I" "Getting details for the Machine Catalog: $machineCatalogName" $LogFile
-                $machineCatalog = Get-BrokerCatalog -Name $machineCatalogName
+                TK_WriteLog "I" "Getting details for the Machine Catalog: $MCName" $LogFile
+                $machineCatalog = Get-BrokerCatalog -Name $MCName
                 TK_WriteLog "I" "Adding $machineCatalog.UnassignedCount machines to the Desktop Group: $desktopGroupName" $LogFile
                 $machinesCount = Add-BrokerMachinesToDesktopGroup -Catalog $machineCatalog -Count $machineCatalog.UnassignedCount -DesktopGroup $desktopGroup
             
@@ -350,20 +350,20 @@ function TK_CreateDeliveryGroup {
                     $Test = Test-BrokerEntitlementPolicyRuleNameAvailable -Name @($desktopGroupName + "_" + $Num.ToString()) -ErrorAction SilentlyContinue
                     If ($Test.Available -eq $False) { $Num = $Num + 1 }
                 } While ($Test.Available -eq $False)
-                TK_WriteLog "I"  "Assigning $brokerUsers.Name to Desktop Catalog: $machineCatalogName" $LogFile
+                TK_WriteLog "I"  "Assigning $brokerUsers.Name to Desktop Catalog: $MCName" $LogFile
                 $EntPolicyRule = New-BrokerEntitlementPolicyRule -Name ($desktopGroupName + "_" + $Num.ToString()) -IncludedUsers $brokerUsers -DesktopGroupUid $desktopGroup.Uid -Enabled $True -IncludedUserFilterEnabled $False
             
                 # Check whether access rules exist and then create rules for direct access and via Access Gateway
                 $accessPolicyRule = $desktopGroupName + "_Direct"
                 If (Test-BrokerAccessPolicyRuleNameAvailable -Name @($accessPolicyRule) -ErrorAction SilentlyContinue) {
-                    TK_WriteLog "I"  "Allowing direct access rule to the Desktop Catalog: $machineCatalogName" $LogFile
+                    TK_WriteLog "I"  "Allowing direct access rule to the Desktop Catalog: $MCName" $LogFile
                     New-BrokerAccessPolicyRule -Name $accessPolicyRule  -IncludedUsers @($brokerUsers.Name) -AllowedConnections 'NotViaAG' -AllowedProtocols @('HDX','RDP') -AllowRestart $True -DesktopGroupUid $desktopGroup.Uid -Enabled $True -IncludedSmartAccessFilterEnabled $True -IncludedUserFilterEnabled $True
                 } Else {
                     TK_WriteLog "E" "Failed to add direct access rule $accessPolicyRule. It already exists." $LogFile
                 }
                 $accessPolicyRule = $desktopGroupName + "_AG"
                 If (Test-BrokerAccessPolicyRuleNameAvailable -Name @($accessPolicyRule) -ErrorAction SilentlyContinue) {
-                    TK_WriteLog "I"  "Allowing access via Access Gateway rule to the Desktop Catalog: $machineCatalogName" $LogFile
+                    TK_WriteLog "I"  "Allowing access via Access Gateway rule to the Desktop Catalog: $MCName" $LogFile
                     New-BrokerAccessPolicyRule -Name $accessPolicyRule -IncludedUsers @($brokerUsers.Name) -AllowedConnections 'ViaAG' -AllowedProtocols @('HDX','RDP') -AllowRestart $True -DesktopGroupUid $desktopGroup.Uid -Enabled $True -IncludedSmartAccessFilterEnabled $True -IncludedSmartAccessTags @() -IncludedUserFilterEnabled $True
                 } Else {
                     TK_WriteLog "E" "Failed to add Access Gateway rule $accessPolicyRule. It already exists." $LogFile
@@ -457,5 +457,4 @@ $CCTargetRGSplit = $CCTargetRGFull -Split " "
 $CCTargetRG = $CCTargetRGSplit[1]
 
 $CreatedMC = TK_CreateMachineCatalog -MachineCatalogName $CCmachineCatalogName -AllocType $CCallocType -PersistChanges $CCpersistChanges -ProvType $CCprovType -SessionSupport $CCsessionSupport -Domain $CCdomain -NamingScheme $CCnamingScheme -NamingSchemeType $CCnamingSchemeType -OrgUnit $CCorgUnit -MasterVMName $CCmasterVMName -AZHostingUnit $AZHostingUnit -AZVmSize $AZVMSize -MasterRG $CCmasterRG -TargetRG $CCTargetRG -XdControllers $CCxdControllers -MachineCount $CCmachineCount
-
 $CreatedDG = TK_CreateDeliveryGroup -desktopGroupName $CCDeliveryGroupName -desktopGroupPublishedName $CCDeliveryGroupName -desktopGroupDesc $CCDeliveryGroupName -colorDepth $CCcolorDepth -deliveryType $CCdeliveryType -desktopKind $CCdesktopKind -sessionSupport $CCsessionSupport -functionalLevel $CCfunctionalLevel -timeZone $CCtimeZone -offPeakBuffer $CCoffPeakBuffer -peakBuffer $CCPeakBuffer -assignedGroup $CCassignedGroup -MCName $CCmachineCatalogName
