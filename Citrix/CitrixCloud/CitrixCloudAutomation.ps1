@@ -362,7 +362,8 @@ if (!(Get-Module "Az")) {
 # -------------------------------------------------------------------------------------------------
 # Main part - Creating Deployment
 # -------------------------------------------------------------------------------------------------
-$CCTargetRG = TK_CreateAzRG -AzResourceGroup $MachineCatalogName -AzRegion $AZRegion
-$CCTargetRG = $CCTargetRG.Split(" ") | Select-Object -Last 1
+$CCTargetRGFull = TK_CreateAzRG -AzResourceGroup $DeploymentName -AzRegion $AZRegion
+$CCTargetRGSplit = $CCTargetRGFull -Split " "
+$CCTargetRG = $CCTargetRGSplit[1]
 
-TK_CreateMachineCatalog -MachineCatalogName $CCmachineCatalogName -AllocType $CCallocType -PersistChanges $CCpersistChanges -ProvType $CCprovType -SessionSupport $CCsessionSupport -Domain $CCdomain -NamingScheme $CCnamingScheme -NamingSchemeType $CCnamingSchemeType -OrgUnit $CCorgUnit -MasterVMName $CCmasterVMName -AZHostingUnit $AZHostingUnit -AZVmSize $AZVMSize -MasterRG $CCmasterRG -TargetRG $CCTargetRG -XdControllers $CCxdControllers -MachineCount $CCmachineCount
+$CreatedMC = TK_CreateMachineCatalog -MachineCatalogName $CCmachineCatalogName -AllocType $CCallocType -PersistChanges $CCpersistChanges -ProvType $CCprovType -SessionSupport $CCsessionSupport -Domain $CCdomain -NamingScheme $CCnamingScheme -NamingSchemeType $CCnamingSchemeType -OrgUnit $CCorgUnit -MasterVMName $CCmasterVMName -AZHostingUnit $AZHostingUnit -AZVmSize $AZVMSize -MasterRG $CCmasterRG -TargetRG $CCTargetRG -XdControllers $CCxdControllers -MachineCount $CCmachineCount
