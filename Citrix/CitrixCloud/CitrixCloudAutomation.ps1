@@ -68,6 +68,17 @@ $CCmasterVMName = "cloudmaster*"
 $CCmasterRG = "CitrixCloudRG"
 $CCmachineCount = 1
 
+# Delivery Group properties
+$CCdeliveryGroupName = $DeploymentName + "-DG"
+$CCcolorDepth = 'TwentyFourBit'
+$CCdeliveryType = 'DesktopsOnly'
+$CCdesktopKind = 'Shared' # Possible values: Private, Shared
+$CCfunctionalLevel = 'L7_9'
+$CCtimeZone = 'UTC'
+$CCoffPeakBuffer = 10
+$CCpeakBuffer = 10
+$CCassignedGroup = "MYCTXCLOUD\VDIUsers"
+
 # -------------------------------------------------------------------------------------------------
 # Global Error handling and verbose output
 # -------------------------------------------------------------------------------------------------
@@ -292,16 +303,95 @@ function TK_CreateMachineCatalog {
     }
 
 function TK_CreateDeliveryGroup {
-        begin {
+    param(
+
+        [Parameter(Mandatory=$true)][String]$desktopGroupName,
+        [Parameter(Mandatory=$true)][String]$desktopGroupPublishedName,
+        [Parameter(Mandatory=$true)][String]$desktopGroupDesc,
+        [Parameter(Mandatory=$true)][String]$colorDepth,
+        [Parameter(Mandatory=$true)][String]$deliveryType,
+        [Parameter(Mandatory=$true)][String]$desktopKind,
+        [Parameter(Mandatory=$true)][String]$sessionSupport,
+        [Parameter(Mandatory=$true)][String]$functionalLevel,
+        [Parameter(Mandatory=$true)][String]$timeZone,
+        [Parameter(Mandatory=$true)][String]$offPeakBuffer,
+        [Parameter(Mandatory=$true)][String]$peakBuffer,
+        [Parameter(Mandatory=$true)][String]$assignedGroup,
+        [Parameter(Mandatory=$true)][String]$MCName 
+    )    
+    
+    begin {
         }
 
-        process {
+    process {
+        If (!(Get-BrokerDesktopGroup -Name $desktopGroupName -ErrorAction SilentlyContinue)) {
+            TK_WriteLog "I" "Creating new Desktop Group: $desktopGroupName" $LogFile
+            $CCdesktopGroup = New-BrokerDesktopGroup -ErrorAction SilentlyContinue -Name $desktopGroupName -DesktopKind $desktopKind -ColorDepth $colorDepth -InMaintenanceMode $False -IsRemotePC $False -MinimumFunctionalLevel $functionalLevel -OffPeakBufferSizePercent $offPeakBuffer -PeakBufferSizePercent $peakBuffer -PublishedName $desktopGroupPublishedName -Scope @() -SecureIcaRequired $False -SessionSupport $sessionSupport -ShutdownDesktopsAfterUse $False  -TimeZone $timeZone -Description $desktopGroupPublishedName
+        
+            If ($CCdesktopGroup) {
+                # Add machines to the new desktop group. Uses the number of machines available in the target machine catalog
+                TK_WriteLog "I" "Getting details for the Machine Catalog: $machineCatalogName" $LogFile
+                $machineCatalog = Get-BrokerCatalog -Name $machineCatalogName
+                TK_WriteLog "I" "Adding $machineCatalog.UnassignedCount machines to the Desktop Group: $desktopGroupName" $LogFile
+                $machinesCount = Add-BrokerMachinesToDesktopGroup -Catalog $machineCatalog -Count $machineCatalog.UnassignedCount -DesktopGroup $desktopGroup
+            
+                # Create a new broker user/group object if it doesn't already exist
+                TK_WriteLog "I"  "Creating user/group object in the broker for $assignedGroup" $LogFile
+                If (!(Get-BrokerUser -Name $assignedGroup -ErrorAction SilentlyContinue)) {
+                    $brokerUsers = New-BrokerUser -Name $assignedGroup
+                } Else {
+                    $brokerUsers = Get-BrokerUser -Name $assignedGroup
+                }
+            
+                # Create an entitlement policy for the new desktop group. Assigned users to the desktop group
+                # First check that we have an entitlement name available. Increment until we do.
+                $Num = 1
+                Do {
+                    $Test = Test-BrokerEntitlementPolicyRuleNameAvailable -Name @($desktopGroupName + "_" + $Num.ToString()) -ErrorAction SilentlyContinue
+                    If ($Test.Available -eq $False) { $Num = $Num + 1 }
+                } While ($Test.Available -eq $False)
+                TK_WriteLog "I"  "Assigning $brokerUsers.Name to Desktop Catalog: $machineCatalogName" $LogFile
+                $EntPolicyRule = New-BrokerEntitlementPolicyRule -Name ($desktopGroupName + "_" + $Num.ToString()) -IncludedUsers $brokerUsers -DesktopGroupUid $desktopGroup.Uid -Enabled $True -IncludedUserFilterEnabled $False
+            
+                # Check whether access rules exist and then create rules for direct access and via Access Gateway
+                $accessPolicyRule = $desktopGroupName + "_Direct"
+                If (Test-BrokerAccessPolicyRuleNameAvailable -Name @($accessPolicyRule) -ErrorAction SilentlyContinue) {
+                    TK_WriteLog "I"  "Allowing direct access rule to the Desktop Catalog: $machineCatalogName" $LogFile
+                    New-BrokerAccessPolicyRule -Name $accessPolicyRule  -IncludedUsers @($brokerUsers.Name) -AllowedConnections 'NotViaAG' -AllowedProtocols @('HDX','RDP') -AllowRestart $True -DesktopGroupUid $desktopGroup.Uid -Enabled $True -IncludedSmartAccessFilterEnabled $True -IncludedUserFilterEnabled $True
+                } Else {
+                    TK_WriteLog "E" "Failed to add direct access rule $accessPolicyRule. It already exists." $LogFile
+                }
+                $accessPolicyRule = $desktopGroupName + "_AG"
+                If (Test-BrokerAccessPolicyRuleNameAvailable -Name @($accessPolicyRule) -ErrorAction SilentlyContinue) {
+                    TK_WriteLog "I"  "Allowing access via Access Gateway rule to the Desktop Catalog: $machineCatalogName" $LogFile
+                    New-BrokerAccessPolicyRule -Name $accessPolicyRule -IncludedUsers @($brokerUsers.Name) -AllowedConnections 'ViaAG' -AllowedProtocols @('HDX','RDP') -AllowRestart $True -DesktopGroupUid $desktopGroup.Uid -Enabled $True -IncludedSmartAccessFilterEnabled $True -IncludedSmartAccessTags @() -IncludedUserFilterEnabled $True
+                } Else {
+                    TK_WriteLog "E" "Failed to add Access Gateway rule $accessPolicyRule. It already exists." $LogFile
+                }
+            
+                # Create weekday and weekend access rules
+                $powerTimeScheme = "Desktop_Weekdays"
+                If (Test-BrokerPowerTimeSchemeNameAvailable -Name @($powerTimeScheme) -ErrorAction SilentlyContinue) {
+                    TK_WriteLog "I" "Adding new power scheme $powerTimeScheme" $LogFile
+                    New-BrokerPowerTimeScheme -DisplayName 'Weekdays' -Name $powerTimeScheme -DaysOfWeek 'Weekdays' -DesktopGroupUid $desktopGroup.Uid -PeakHours @($False,$False,$False,$False,$False,$False,$False,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$False,$False,$False,$False,$False) -PoolSize @(0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0)
+                } Else {
+                    TK_WriteLog "E" "Failed to add power scheme rule $powerTimeScheme. It already exists." $LogFile
+                }
+                $powerTimeScheme = "Desktop_Weekend"
+                If (Test-BrokerPowerTimeSchemeNameAvailable -Name @($powerTimeScheme) -ErrorAction SilentlyContinue) {
+                    TK_WriteLog "I" "Adding new power scheme $powerTimeScheme" $LogFile
+                    New-BrokerPowerTimeScheme -DisplayName 'Weekend' -Name $powerTimeScheme -DaysOfWeek 'Weekend' -DesktopGroupUid $desktopGroup.Uid -PeakHours @($False,$False,$False,$False,$False,$False,$False,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$True,$False,$False,$False,$False,$False) -PoolSize @(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+                } Else {
+                    TK_WriteLog "E" "Failed to add power scheme rule $powerTimeScheme. It already exists." $LogFile
+                }
+            
+            } 
         }
-
-        end {
-        }
-
     }
+
+    end {
+    }
+}
 
 function TK_CreateAzRG {
 
@@ -367,3 +457,5 @@ $CCTargetRGSplit = $CCTargetRGFull -Split " "
 $CCTargetRG = $CCTargetRGSplit[1]
 
 $CreatedMC = TK_CreateMachineCatalog -MachineCatalogName $CCmachineCatalogName -AllocType $CCallocType -PersistChanges $CCpersistChanges -ProvType $CCprovType -SessionSupport $CCsessionSupport -Domain $CCdomain -NamingScheme $CCnamingScheme -NamingSchemeType $CCnamingSchemeType -OrgUnit $CCorgUnit -MasterVMName $CCmasterVMName -AZHostingUnit $AZHostingUnit -AZVmSize $AZVMSize -MasterRG $CCmasterRG -TargetRG $CCTargetRG -XdControllers $CCxdControllers -MachineCount $CCmachineCount
+
+$CreatedDG = TK_CreateDeliveryGroup -desktopGroupName $CCDeliveryGroupName -desktopGroupPublishedName $CCDeliveryGroupName -desktopGroupDesc $CCDeliveryGroupName -colorDepth $CCcolorDepth -deliveryType $CCdeliveryType -desktopKind $CCdesktopKind -sessionSupport $CCsessionSupport -functionalLevel $CCfunctionalLevel -timeZone $CCtimeZone -offPeakBuffer $CCoffPeakBuffer -peakBuffer $CCPeakBuffer -assignedGroup $CCassignedGroup -MCName $CCmachineCatalogName
