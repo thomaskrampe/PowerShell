@@ -35,8 +35,7 @@ Function TK_CreateFolderFromCSV {
         OF SUCH DAMAGES IN ADVANCE.
 
     #>
-    
-    
+
     [CmdletBinding()]
     Param( 
         [Parameter(Mandatory=$true)][String]$CSVFile,
@@ -53,6 +52,12 @@ Function TK_CreateFolderFromCSV {
             $CreateFolder = $TargetPath + "\" + $($CSVObject.User)
             Write-Verbose "Creating folder $CreateFolder."
             New-Item -ItemType directory -Path $CreateFolder | Out-Null
+            if ( $(Try { Test-Path $CreateFolder.trim() } Catch { $false }) ) {
+                Write-Verbose "Folder $CreateFolder created successful."
+            }
+            Else {
+                Write-Error "Creating folder $CreateFolder failed." -targetobject $_ -Category WriteError -RecommendedAction "Maybe missing permissions." 
+            }
         }
     }
      
