@@ -18,7 +18,7 @@ Function TK_CreateFolderFromCSV {
         .EXAMPLE
             TK_CreateFolderFromCSV -CSVFile "C:\Temp\userlist.csv" - TargetPath "C:\Users"
         .LINK        
-            https://LoginConsultants.de 
+            https://github.com/thomaskrampe/PowerShell/blob/master/User%20Profiles/TK_CreateUserFolderFromCSV.ps1
         .NOTES       
             Author        : Thomas Krampe | thomas.krampe@myctx.net        
             Version       : 1.0            
