@@ -5,18 +5,9 @@
     .DESCRIPTION        
         Lightweight Script for prepare a Windows Virtual Desktop environment        
     
-    .PARAMETER EPLocation
-        Should be matching the namingconvention eg. DEMHM
-
-    .PARAMETER EPClassroom
-        Should be a single diget eg. 1 for classroom 1 etc.
+    .PARAMETER ConfigIniFile
+        Should be a valid configuration ini file in the script directory, if not set WVDPreparation.config.ini will be used.
     
-    .PARAMETER EPImageType
-        Should be 2d or 3d (2d machine type = Standard_DS2_v2, 3d machine type = Standard_NV6)
-    
-    .PARAMETER EPUserCount
-        VM's to be created 
-
     .EXAMPLE
         
 
@@ -39,6 +30,13 @@
         OF SUCH DAMAGES IN ADVANCE.
 
 #>
+Param( 
+        [Parameter(Position = 0)][String]$ConfigIniFile
+        
+    )
+
+
+
 
 #region Functions
 Function TK_WriteLog {
@@ -278,11 +276,41 @@ Function TK_LoadModule {
     }
 } #EndFunction TK_LoadModule
 
+Function TK_CreateAzureRG {
+
+    [CmdletBinding()]
+    
+    Param( 
+        [Parameter(Mandatory = $true, Position = 0)][String]$AzureRGName,
+        [Parameter(Mandatory = $true, Position = 1)][String]$AzureRGLocation
+    )
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        TK_WriteLog "I" "START FUNCTION - $FunctionName" $LogFile
+           
+    }
+    process {
+        TK_WriteLog "I" "Creating ResourceGroup in Azure is enabled." $LogFile
+        New-AzResourceGroup -ResourceGroupName $AzureRGName -Location $AzureRGLocation
+    }
+    end {
+        TK_WriteLog "I" "END FUNCTION - $FunctionName" $LogFile
+    }
+}#EndFunction TK_CreateAzureRG
+
 #endregion
 
 # Read values from config file
-if (!(Test-Path "$PSScriptRoot\WVDPreparation.config.ini")) { Write-Error "Configuration file not exist, exiting." -Category ObjectNotFound; Exit 1 }
-$ConfigValues = TK_ReadFromINI "$PSScriptRoot\WVDPreparation.config.ini"
+If (!($ConfigIniFile)) { 
+    $ConfigIniFile = "WVDPreparation.config.ini"  
+}
+
+If (!(Test-Path "$PSScriptRoot\$ConfigIniFile")) { 
+    Write-Error "Configuration file not exist, exiting." -Category ObjectNotFound
+    Exit 1 
+}
+
+$ConfigValues = TK_ReadFromINI "$PSScriptRoot\$ConfigIniFile"
 
 #region Log handling
 # -------------------------------------------------------------------------------------------------
@@ -301,7 +329,26 @@ if (!(Test-Path $LogDir)) { New-Item -Path $LogDir -ItemType directory | Out-Nul
 New-Item $LogFile -ItemType "file" -force | Out-Null
 #endregion
 
+# Load required Azure PowerShell module
+TK_LoadModule -ModuleName "Az"
+
+# Azure Authentication
+Connect-AzAccount
+
+# Create ResourceGroup in Azure
+$CreateRG = $ConfigValues.Control.CreateResourceGroup
+$AzureResourceGroupName = $ConfigValues.Azure.ResourceGroupName
+$AzureRGLocation = $ConfigValues.Azure.RGLocation
+
+If ($CreateRG -eq 1) {
+    
+    TK_CreateAzureRG $AzureResourceGroupName $AzureRGLocation
+} Else {
+    TK_WriteLog "I" "Creating ResourceGroup in Azure is disabled in $ConfigIniFile" $LogFile
+}
+
+# Create Network and Subnets in Azure
 
 
-
+# Create VPN in Azure
 
