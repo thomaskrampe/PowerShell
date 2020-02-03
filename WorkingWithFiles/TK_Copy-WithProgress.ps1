@@ -8,6 +8,8 @@ function Copy-WithProgress {
         , [int] $Gap = 200
         , [int] $ReportGap = 2000
     )
+    # Author: https://stackoverflow.com/users/189198/trevor-sullivan 
+    
     # Define regular expression that will gather number of bytes copied
     $RegexBytes = '(?<=\s+)\d+(?=\s+)';
 
