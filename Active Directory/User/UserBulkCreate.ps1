@@ -126,6 +126,46 @@ function TK_ScrambleString([string]$inputString){
     return $outputString 
 }
 
+function TK_Confirm-DomainAdmin {
+    [cmdletbinding()]
+    param (
+        $UserName = $env:USERNAME
+    )
+    begin {
+        $domainadmins = (Get-ADGroupMember 'domain admins').samaccountname
+    }
+    process {
+        foreach ($user in $UserName) {
+            if ($user -in $domainadmins) {
+                Write-Verbose "$User is a member of the domain admins group"
+                $domainadmin = $true
+            } else {
+                Write-Verbose "$User is not a member of the domain admins group"
+                $domainadmin = $false
+            }
+
+            [pscustomobject]@{
+                User = $user
+                DomainAdmin = $domainadmin
+            }
+        }
+    }
+}
+
+# -------------------------------------------------------------------------------------------------
+# Log handling
+# -------------------------------------------------------------------------------------------------
+$LogDir = "C:\_Logs"
+$ScriptName = "UserBulkCreate"
+$LogFileName = "$ScriptName"+"_$mode.log"
+$LogFile = Join-path $LogDir $LogFileName
+
+# Create the log directory if it does not exist
+if (!(Test-Path $LogDir)) { New-Item -Path $LogDir -ItemType directory | Out-Null }
+
+# Create new log file (overwrite existing one)
+New-Item $LogFile -ItemType "file" -force | Out-Null
+
 # -------------------------------------------------------------------------------------------------
 # Install modules
 # -------------------------------------------------------------------------------------------------
@@ -149,21 +189,14 @@ else {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Log handling
+# Check user persmissions
 # -------------------------------------------------------------------------------------------------
-$LogDir = "C:\_Logs"
-$ScriptName = "UserBulkCreate"
-$LogFileName = "$ScriptName"+"_$mode.log"
-$LogFile = Join-path $LogDir $LogFileName
-
-# Create the log directory if it does not exist
-if (!(Test-Path $LogDir)) { New-Item -Path $LogDir -ItemType directory | Out-Null }
-
-# Create the output directory if it does not exist
-if (!(Test-Path $Folder)) { New-Item -Path $Folder -ItemType directory | Out-Null }
-
-# Create new log file (overwrite existing one)
-New-Item $LogFile -ItemType "file" -force | Out-Null
+$IsAdmin = TK_Confirm-DomainAdmin
+If (!($IsAdmin.DomainAdmin)) {
+    TK_WriteLog -InformationType "E" -Text  "User $IsAdmin.User is not Domain Admin" -LogFile $LogFile
+    Write-Host "ERROR: User running this script must be member of the domain admin group." -ForegroundColor Red
+    Exit 
+}
 
 # -------------------------------------------------------------------------------------------------
 # Initialize Variables
