@@ -153,11 +153,20 @@ function TK_Confirm-DomainAdmin {
 }
 
 # -------------------------------------------------------------------------------------------------
+# Check user persmissions
+# -------------------------------------------------------------------------------------------------
+$IsAdmin = TK_Confirm-DomainAdmin
+If (!($IsAdmin.DomainAdmin)) {
+    Write-Host "ERROR: User running this script must be member of the domain admin group." -ForegroundColor Red
+    Exit 
+}
+
+# -------------------------------------------------------------------------------------------------
 # Log handling
 # -------------------------------------------------------------------------------------------------
 $LogDir = "C:\_Logs"
 $ScriptName = "UserBulkCreate"
-$LogFileName = "$ScriptName"+"_$mode.log"
+$LogFileName = "$ScriptName"+".log"
 $LogFile = Join-path $LogDir $LogFileName
 
 # Create the log directory if it does not exist
@@ -186,16 +195,6 @@ else {
             Exit 1
         }
     }    
-}
-
-# -------------------------------------------------------------------------------------------------
-# Check user persmissions
-# -------------------------------------------------------------------------------------------------
-$IsAdmin = TK_Confirm-DomainAdmin
-If (!($IsAdmin.DomainAdmin)) {
-    TK_WriteLog -InformationType "E" -Text  "User $IsAdmin.User is not Domain Admin" -LogFile $LogFile
-    Write-Host "ERROR: User running this script must be member of the domain admin group." -ForegroundColor Red
-    Exit 
 }
 
 # -------------------------------------------------------------------------------------------------
