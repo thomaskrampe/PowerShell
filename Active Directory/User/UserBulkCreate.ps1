@@ -243,7 +243,7 @@ foreach ($User in $ADUsersCSV) {
             #If a user does not exist then create a new user account
             #Account will be created in the OU listed in the $ADDomainOU variable; don’t forget to change the domain name in the $ADDomainName variable
             TK_WriteLog -InformationType "I" -Text  "Create user $PDUsername ($PDFirstname $PDLastname) with password $PDpassword" -LogFile $LogFile
-            Write-Host "Create user $PDUsername ($PDFirstname $PDLastname)" -ForegroundColor DarkGreen
+            Write-Host "Create user $PDUsername ($PDFirstname $PDLastname)" -ForegroundColor Green
             $Usercount++
 
             New-ADUser `
