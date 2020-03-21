@@ -17,6 +17,7 @@
     Version       : 1.0
     Creation date : 19.03.2020 | v0.1 | Initial script
                   : 19.03.2020 | v1.0 | Released
+                  : 21.03.2020 | v1.1 | Add Confirm Domain Admin
                       
     IMPORTANT NOTICE
     ----------------
@@ -201,7 +202,10 @@ else {
 # Initialize Variables
 # -------------------------------------------------------------------------------------------------
 $Domain = Get-ADDomain
-$ADUsersCSV = Import-csv %temp%\aduser.csv
+$ScriptDir = Split-Path $script:MyInvocation.MyCommand.Path 
+$CSVPath = $ScriptDir+"\aduser.csv"
+
+$ADUsersCSV = Import-csv $CSVPath
 [string]$ADDomainName = $Domain.DNSRoot
 [string]$ADDomainOU = $domain.UsersContainer
 [Int]$Usercount = 0
@@ -231,13 +235,15 @@ foreach ($User in $ADUsersCSV) {
 
     #Check if the user account already exists in AD
     if (Get-ADUser -F {SamAccountName -eq $PDUsername}) {
-        #If user does exist, output a warning message
-        TK_WriteLog -InformationType "E" -Text  "A user account $PDUsername has already exist in Active Directory." -LogFile $LogFile
+        #If user does exist, output a warning 
+        TK_WriteLog -InformationType "W" -Text  "Skip user account $PDUsername because it already exist in Active Directory." -LogFile $LogFile
+        Write-Host "Skip user account $PDUsername because it already exist in Active Directory." -ForegroundColor Red
             }
        else {
             #If a user does not exist then create a new user account
             #Account will be created in the OU listed in the $ADDomainOU variable; don’t forget to change the domain name in the $ADDomainName variable
             TK_WriteLog -InformationType "I" -Text  "Create user $PDUsername ($PDFirstname $PDLastname) with password $PDpassword" -LogFile $LogFile
+            Write-Host "Create user $PDUsername ($PDFirstname $PDLastname)" -ForegroundColor DarkGreen
             $Usercount++
 
             New-ADUser `
@@ -256,3 +262,4 @@ foreach ($User in $ADUsersCSV) {
 }
 
 TK_WriteLog -InformationType "I" -Text  "Add users finished. $Usercount user accounts created." -LogFile $LogFile
+Write-host "`nAll user and there passwords are available here: $LogFile. `nKeep them in a save place before you re-run this script, otherwise there are lost." -ForegroundColor Yellow 
