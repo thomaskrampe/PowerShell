@@ -75,5 +75,3 @@ function TK_DownloadFilesFromRepo {
     }
 
 }
-
-DownloadFilesFromRepo -Owner thomaskrampe -Repository PowerShell -Path /WorkingWithFiles/TK_Copy-WithProgress.ps1 -DestinationPath \Users\thomas
