@@ -18,7 +18,7 @@ function TK_DownloadFilesFromRepo {
         on Windows
         TK_DownloadFilesFromRepo -Owner thomaskrampe -Repository PowerShell -Path /WorkingWithFiles/TK_Copy-WithProgress.ps1 -DestinationPath C:\\Users\thomas
         .LINK        
-            https://github.com/thomaskrampe/PowerShell/blob/master/User%20Profiles/TK_ReadFromINI.ps1
+            https://github.com/thomaskrampe/PowerShell/blob/master/WorkingWithFiles/TK_DownloadFilesFromGithubRepo.ps1
         .NOTES       
             Author        : Thomas Krampe | thomas.krampe@myctx.net        
             Version       : 1.0            
