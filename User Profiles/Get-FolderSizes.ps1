@@ -195,7 +195,7 @@ Process {
             Path = $Path
             Recurse = $Recurse
         }
-        ForEach ($Folder in (Get-ChildItem @ParamSplat | Where { $_.PSisContainer }))
+        ForEach ($Folder in (Get-ChildItem @ParamSplat | Where-Object { $_.PSisContainer }))
         {	$Report += AddObject $Folder
             $NumDirs ++
         }
@@ -223,7 +223,7 @@ Folder Sizes for "$Path"
     $Post = "<h2><p>Total Folders Processed: $NumDirs<br>Total Space Used:  $TotalSize</p></h2>Run on $(Get-Date -f 'MM/dd/yyyy hh:mm:ss tt')</body></html>"
 
     #Create the report and save it to a file
-    $HTML = $Report | Select 'Folder Name',Owner,'Created On','Last Updated',Size | Sort $SortBy -Descending:$Descending | ConvertTo-Html -PreContent $Pre -PostContent $Post -Head $Header | Set-AlternatingRows -CSSEvenClass even -CSSOddClass odd | Out-File $ReportPath\FolderSizes.html
+    $HTML = $Report | Select-Object 'Folder Name',Owner,'Created On','Last Updated',Size | Sort $SortBy -Descending:$Descending | ConvertTo-Html -PreContent $Pre -PostContent $Post -Head $Header | Set-AlternatingRows -CSSEvenClass even -CSSOddClass odd | Out-File $ReportPath\FolderSizes.html
 
     #Display the report in your default browser
     & $ReportPath\FolderSizes.html
