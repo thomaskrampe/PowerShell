@@ -1,4 +1,4 @@
-﻿##############################################################################################################################
+##############################################################################################################################
 #
 # This script must be run elevated and needs to be run on all XenDesktop Delivery Controller.
 # It also asumes that the database has already been moved to the new SQL server and the necessary logins created.
@@ -9,13 +9,15 @@
 #
 # Preparation steps:
 #
-#    1.Backup Registry.
+#    1. Backup Registry.
 #
-#    2.Backup the Existing Databases and restore them onto the SQL target server. There are typically three databases: one for 
+#    2. Backup the Existing Databases and restore them onto the SQL target server. There are typically three databases: one for 
 #	   the site, one for Monitoring, and one for Logging. Refer to the Microsoft article mentioned above for more information.
 #
-#    3.Verify that all the Delivery Controllers have valid logins for their machine account in the form DomainName\Computername$ 
-#      on the database server. Refer to the Citrix article mentioned above for more information.
+#    3. Verify that all the Delivery Controllers have valid logins for their machine account in the form DomainName\Computername$ 
+#       on the database server. Refer to the Citrix article mentioned above for more information.
+#
+#       Read the process description here 
 #
 ##############################################################################################################################
 
