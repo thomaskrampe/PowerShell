@@ -17,7 +17,7 @@
 #    3. Verify that all the Delivery Controllers have valid logins for their machine account in the form DomainName\Computername$ 
 #       on the database server. Refer to the Citrix article mentioned above for more information.
 #
-#       Read the process description here 
+#       Read the process description here: https://t13k.de/tlam
 #
 ##############################################################################################################################
 
