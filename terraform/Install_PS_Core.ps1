@@ -9,7 +9,7 @@ Invoke-WebRequest https://chocolatey.org/install.ps1 -UseBasicParsing | Invoke-E
 Start-Sleep -Seconds 120
 
 # Set pwsh as default ssh shell
-Set-ItemProperty -Path "HKLM:\Software\OpenSSH" -Name "DefaultShell" -Value "C:\Program Files\PowerShell\7\pwsh.exe"
+# Set-ItemProperty -Path "HKLM:\Software\OpenSSH" -Name "DefaultShell" -Value "C:\Program Files\PowerShell\7\pwsh.exe"
 
 # Create an AllUsersCurrentHost profile
 if (!(Test-Path -Path $PROFILE.AllUsersAllHosts)) {
