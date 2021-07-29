@@ -1,5 +1,3 @@
-start-transcript c:\temp\transcript.txt -UseMinimalHeader
-
 Import-Module -Name 'NetSecurity'
 
 # Setup windows update service to manual
@@ -24,8 +22,8 @@ Start-Service sshd
 # Setup windows update service to original
 Set-Service wuauserv -StartupType $wuauserv_starttype
 
-# Set pwsh as default ssh shell
-Set-ItemProperty -Path "HKLM:\Software\OpenSSH" -Name "DefaultShell" -Value "C:\Program Files\PowerShell\7\pwsh.exe" -PropertyType String -Force
+# Configure Powershell as default ssh shell
+New-ItemProperty -Path "HKLM:\Software\OpenSSH" -Name "DefaultShell" -Value "$Env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force
 
 # Restart the service
 Restart-Service sshd
@@ -48,19 +46,6 @@ $acl.SetAccessRule($administratorsRule)
 $acl.SetAccessRule($systemRule)
 $acl | Set-Acl
 
-# Create an AllUsersCurrentHost profile
-if (!(Test-Path -Path $PROFILE.AllUsersAllHosts)) {
-  New-Item -ItemType File -Path $PSHOME\Profile.ps1 -Force
-  Add-Content -Path $PSHOME\Profile.ps1 -Value 'function Prompt { "PS [" + $env:COMPUTERNAME + "] " + (Get-Location) + "> " }'
-}
-
 # Open Windows Firewall for SSH traffic inbound
 New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
 
-# Install Chocolatey
-Invoke-WebRequest https://chocolatey.org/install.ps1 -UseBasicParsing | Invoke-Expression
-
-# Install PowerShell core 7.1.3
-choco install powershell-core --version=7.1.3 -y
-
-stop-transcript
