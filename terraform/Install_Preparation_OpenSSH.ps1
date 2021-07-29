@@ -22,12 +22,6 @@ Start-Service sshd
 # Setup windows update service to original
 Set-Service wuauserv -StartupType $wuauserv_starttype
 
-# Install Chocolatey
-Invoke-WebRequest https://chocolatey.org/install.ps1 -UseBasicParsing | Invoke-Expression
-
-# Install PowerShell core 7.1.3
-choco install powershell-core --version=7.1.3 -y
-
 # Set pwsh as default ssh shell
 Set-ItemProperty -Path "HKLM:\Software\OpenSSH" -Name "DefaultShell" -Value "C:\Program Files\PowerShell\7\pwsh.exe" -PropertyType String -Force
 
@@ -60,3 +54,10 @@ if (!(Test-Path -Path $PROFILE.AllUsersAllHosts)) {
 
 # Open Windows Firewall for SSH traffic inbound
 New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
+
+# Install Chocolatey
+Invoke-WebRequest https://chocolatey.org/install.ps1 -UseBasicParsing | Invoke-Expression
+
+# Install PowerShell core 7.1.3
+choco install powershell-core --version=7.1.3 -y
+Start-Process "choco install powershell-core --version=7.1.3 -y" -wait
