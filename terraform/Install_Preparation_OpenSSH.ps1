@@ -1,3 +1,5 @@
+start-transcript c:\temp\transcript.txt -UseMinimalHeader
+
 Import-Module -Name 'NetSecurity'
 
 # Setup windows update service to manual
@@ -59,5 +61,6 @@ New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled Tru
 Invoke-WebRequest https://chocolatey.org/install.ps1 -UseBasicParsing | Invoke-Expression
 
 # Install PowerShell core 7.1.3
-# choco install powershell-core --version=7.1.3 -y
-Start-Process "choco install powershell-core --version=7.1.3 -y" -wait
+choco install powershell-core --version=7.1.3 -y
+
+stop-transcript
