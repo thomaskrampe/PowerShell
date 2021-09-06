@@ -16,3 +16,7 @@ if (!(Test-Path -Path $PROFILE.AllUsersAllHosts)) {
     New-Item -ItemType File -Path $PSHOME\profile.ps1 -Force
     Add-Content -Path $PSHOME\Profile.ps1 -Value 'function Prompt { "PS [" + $env:COMPUTERNAME + "] " + (Get-Location) + "> " }'
   }
+  
+# Set service start type
+Set-Service -Name ssh-agent -StartupType 'Automatic'
+Set-Service -Name sshd -StartupType 'Automatic'
