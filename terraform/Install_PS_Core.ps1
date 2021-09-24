@@ -12,12 +12,12 @@ Start-Sleep -Seconds 120
 $env:Path = "C:\Program Files\PowerShell\7;C:\ProgramData\chocolatey;" + $env:Path
 
 # Set pwsh-core as default ssh shell
+# Set-ItemProperty -Path "HKLM:\Software\OpenSSH" -Name "DefaultShell" -Value "C:\Program Files\PowerShell\7\pwsh.exe"
 #########################################################################################################################
 # Why I don't do this?
 # If we use choco to install additional software we can't upgrade powershell-core from powershell-core 
 # in that case it's better to switch to build in PowerShell, upgrade the package and execute pwsh again.
 #########################################################################################################################
-# Set-ItemProperty -Path "HKLM:\Software\OpenSSH" -Name "DefaultShell" -Value "C:\Program Files\PowerShell\7\pwsh.exe"
 
 # Create an AllUsersCurrentHost profile
 if (!(Test-Path -Path $PROFILE.AllUsersAllHosts)) {
