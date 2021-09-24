@@ -8,6 +8,8 @@ Invoke-WebRequest https://chocolatey.org/install.ps1 -UseBasicParsing | Invoke-E
 
 Start-Sleep -Seconds 120
 
+$env:Path = "C:\Program Files\PowerShell\7;" + $env:Path
+
 # Set pwsh as default ssh shell
 # Set-ItemProperty -Path "HKLM:\Software\OpenSSH" -Name "DefaultShell" -Value "C:\Program Files\PowerShell\7\pwsh.exe"
 
