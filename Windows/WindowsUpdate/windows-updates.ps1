@@ -1,4 +1,7 @@
-﻿<#
+﻿#Requires -RunAsAdministrator
+#Requires -Version 5.1
+
+<#
 .SYNOPSIS
     Install Windows Updates
 .DESCRIPTION
@@ -24,7 +27,7 @@
      Author        : Thomas Krampe | t.krampe@loginconsultants.de
      Version       : 0.1
      Creation date : 04.03.2022 | v0.1 | Initial script
-     Last change   :            |      |  
+     Last change   : 05.03.2022 | v1.0 | first release 
 
     NOTICE
     THIS SCRIPT IS PROVIDED “AS IS” WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING 
@@ -40,10 +43,18 @@
 # A better way is to ask for credentials with "Get-Credentials" CMDlett, but this is not a good way for automation.
 # Choose your own.
 
-$servers = Get-Content "$PSScriptRoot\servers.txt"
-$HexPass = Get-Content "$PSScriptRoot\7sS1C5C.txt"
+# Read server.txt content
+If (-not(Test-Path -Path '$PSSCriptRoot\servers.txt' -PathType Leaf )) {
+    Write-Host "Servers file doesn't exist, exiting script."
+    exit 1
+} else {
+    $servers = Get-Content "$PSScriptRoot\servers.txt"
+}
+
+# Authentication (use whatever fit in your environment)
 # $Credential = Get-Credential
-$Credential = New-Object -TypeName PSCredential -ArgumentList "administrator@licdemo.local", ($HexPass | ConvertTo-SecureString)
+$HexPass = Get-Content "$PSScriptRoot\7sS1C5C.txt"
+$Credential = New-Object -TypeName PSCredential -ArgumentList "administrator@demo.local", ($HexPass | ConvertTo-SecureString)
 
 # Start the main loop
 ForEach ($server in $servers) {
@@ -55,7 +66,7 @@ ForEach ($server in $servers) {
         $up = Invoke-Command -ComputerName $server -ScriptBlock {Start-WUScan -SearchCriteria "Type='Software' AND IsInstalled=0"} -Credential $Credential
     }
     catch {
-        Write-Host $_.ScriptStackTrace
+        throw $_.Exception.Message
     }
     
     if ($up) { 
@@ -73,8 +84,10 @@ ForEach ($server in $servers) {
         $rb = Invoke-Command -ComputerName $server -ScriptBlock {Get-WUIsPendingReboot} -Credential $Credential
         
         if ($rb -eq $true) {
-            write-host "Reboot required on $server"
-            # Restart-Computer -ComputerName $server -Credential $Credential -force
+            write-host "Reboot required on $server."
+            
+            # Reboot server
+            Restart-Computer -ComputerName $server -Credential $Credential -force
             }
         else { 
             write-host "No reboot required on $server"
