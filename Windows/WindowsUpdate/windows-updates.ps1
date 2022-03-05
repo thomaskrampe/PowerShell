@@ -21,8 +21,7 @@
     Reboot required on server1.demo.local
     -----------------------------------------------------------------------------------------------------------------------
 .LINK
-    https://github.com/thomaskrampe/PowerShell/tree/master/Windows/WindowsUpdate
-         
+    https://github.com/thomaskrampe/PowerShell/tree/master/Windows/WindowsUpdate       
 .NOTES
      Author        : Thomas Krampe | t.krampe@loginconsultants.de
      Version       : 0.1
@@ -44,7 +43,7 @@
 # Choose your own.
 
 # Read server.txt content
-If (-not(Test-Path -Path '$PSSCriptRoot\servers.txt' -PathType Leaf )) {
+If (-not(Test-Path -Path $PSSCriptRoot\servers.txt -PathType Leaf )) {
     Write-Host "Servers file doesn't exist, exiting script."
     exit 1
 } else {
