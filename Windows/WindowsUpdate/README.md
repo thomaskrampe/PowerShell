@@ -8,10 +8,10 @@ You are right, a sequential run needs a lot of time but I want to make sure that
 
 ## Screenshots
 Download Updates
-![Downloading updates](images/windows-updates1.png)
+![Downloading updates](images/windows-updates2.png)
 
 Installing Updates
-![Installing updates](images/windows-updates2.png)
+![Installing updates](images/windows-updates1.png)
 
 Update finished
 ![Update finished](images/windows-updates3.png)
