@@ -2,13 +2,7 @@
 
 This script update your windows server based on a simple txt file (one machine per line). This file should be saved in the script directory.
 
-<<<<<<< HEAD
-If a reboot is required after installing updates, the target machine will be restarted automatically via 'Restart-Computer' CMDlet. If don't like this just add the -NoRestart parameter
-=======
-Authentication is done with a hex password in an external file. This is NOT secure! Use Get-Credential CMDlet or use a different solution. Don't forget to change the username in line 57.
-
-If a reboot is required after installing updates, the target machine will be restarted automatically via 'Restart-Computer' CMDlet. If don't like this just comment out the particular line 90.
->>>>>>> 4cbceb826b99b4652996634526335be1c67b0687
+If a reboot is required after installing updates, the target machine will be restarted automatically via 'Restart-Computer' CMDlet. If don't like this just add the -NoRestart parameter.
 
 ## Why sequential and not parallel?
 
