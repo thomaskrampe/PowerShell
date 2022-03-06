@@ -20,14 +20,17 @@
     True
     Reboot required on server1.demo.local
     -----------------------------------------------------------------------------------------------------------------------
+.PARAMETER NoRestart
+    Suppress restart
 .LINK
     https://github.com/thomaskrampe/PowerShell/tree/master/Windows/WindowsUpdate
          
 .NOTES
-     Author        : Thomas Krampe | t.krampe@loginconsultants.de
-     Version       : 0.1
-     Creation date : 04.03.2022 | v0.1 | Initial script
-     Last change   : 05.03.2022 | v1.0 | first release 
+    Author        : Thomas Krampe | t.krampe@loginconsultants.de
+    Version       : 0.1
+    Creation date : 04.03.2022 | v0.1 | Initial script
+                    05.03.2022 | v1.0 | first release 
+    Last change   : 06.03.2022 | v1.1 | Add NoRestart parameter
 
     NOTICE
     THIS SCRIPT IS PROVIDED “AS IS” WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING 
@@ -38,14 +41,15 @@
     OF SUCH DAMAGES IN ADVANCE.
 #>
 
-# The hex password saved in a text file is not very secure. 
-# Read more about this here https://www.easy365manager.com/pscredential/
-# A better way is to ask for credentials with "Get-Credentials" CMDlett, but this is not a good way for automation.
-# Choose your own.
+param
+(
+    # Turn automatic reboot off
+    [Parameter (Position = 1)][Switch]$NoRestart
+)
 
-# Read server.txt content
-If (-not(Test-Path -Path '$PSSCriptRoot\servers.txt' -PathType Leaf )) {
-    Write-Host "Servers file doesn't exist, exiting script."
+# Read servers.txt content
+If (-not(Test-Path -Path $PSSCriptRoot\servers.txt -PathType Leaf )) {
+    Write-Host "Servers file doesn't exist, exit script." -ForegroundColor Red
     exit 1
 } else {
     $servers = Get-Content "$PSScriptRoot\servers.txt"
@@ -72,7 +76,7 @@ ForEach ($server in $servers) {
     if ($up) { 
         # Installing updates on target server
         $upc = $up.count
-        write-host "Found $upc updates." 
+        write-host "Found $upc updates." -ForegroundColor Green
         
         for ($num = 0 ; $num -le $upc ; $num++){
             write-host "    "$up[$num].Title
@@ -84,16 +88,19 @@ ForEach ($server in $servers) {
         $rb = Invoke-Command -ComputerName $server -ScriptBlock {Get-WUIsPendingReboot} -Credential $Credential
         
         if ($rb -eq $true) {
-            write-host "Reboot required on $server."
+            write-host "Reboot required on $server." -ForegroundColor DarkYellow
             
             # Reboot server
-            Restart-Computer -ComputerName $server -Credential $Credential -force
+            if (-not($NoRestart)) {
+                write-host "Restart initiated on $server." -ForegroundColor Red
+                Restart-Computer -ComputerName $server -Credential $Credential -force
             }
+        }
         else { 
-            write-host "No reboot required on $server"
-            }
-        } 
+            write-host "No reboot required on $server" -ForegroundColor Green
+        }
+    } 
     else {
-        write-host "No Updates available for $server"
+        write-host "No Updates available for $server" -ForegroundColor Green
     } 
 }
