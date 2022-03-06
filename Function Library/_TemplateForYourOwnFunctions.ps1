@@ -1,4 +1,4 @@
-Function Template {
+Function ShortURL {
     <#
         .SYNOPSIS
             Name of the Function
@@ -28,7 +28,7 @@ Function Template {
      
     [CmdletBinding()]
     Param( 
-        [Parameter(Mandatory=$true, Position = 0)][String]$Param1
+        [Parameter(Mandatory=$true, Position = 0)][String]$longurl
     )
   
     begin {
@@ -36,10 +36,15 @@ Function Template {
     }
   
     process {
-        
+     
+        $url ="http://t13k.de/yourls-api.php?signature=9695dd257c&action=shorturl&format=simple&url=$longurl"
+        $request = Invoke-WebRequest $url
+        $request.Content   
     }
   
     end {
      
     }
-} #EndFunction Template
+} #EndFunction ShortURL
+
+ShortURL "https://www.example.com"

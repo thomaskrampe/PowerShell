@@ -23,8 +23,7 @@
 .PARAMETER NoRestart
     Suppress restart
 .LINK
-    https://github.com/thomaskrampe/PowerShell/tree/master/Windows/WindowsUpdate
-         
+    https://github.com/thomaskrampe/PowerShell/tree/master/Windows/WindowsUpdate       
 .NOTES
     Author        : Thomas Krampe | t.krampe@loginconsultants.de
     Version       : 0.1
@@ -47,9 +46,15 @@ param
     [Parameter (Position = 1)][Switch]$NoRestart
 )
 
+<<<<<<< HEAD
 # Read servers.txt content
 If (-not(Test-Path -Path $PSSCriptRoot\servers.txt -PathType Leaf )) {
     Write-Host "Servers file doesn't exist, exit script." -ForegroundColor Red
+=======
+# Read server.txt content
+If (-not(Test-Path -Path $PSSCriptRoot\servers.txt -PathType Leaf )) {
+    Write-Host "Servers file doesn't exist, exiting script."
+>>>>>>> 4cbceb826b99b4652996634526335be1c67b0687
     exit 1
 } else {
     $servers = Get-Content "$PSScriptRoot\servers.txt"
