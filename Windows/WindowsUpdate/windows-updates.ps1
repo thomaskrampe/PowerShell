@@ -37,7 +37,8 @@
     Version       : 0.1
     Creation date : 04.03.2022 | v0.1 | Initial script
                     05.03.2022 | v1.0 | first release 
-    Last change   : 06.03.2022 | v1.1 | Add NoRestart parameter
+                    06.03.2022 | v1.1 | Add NoRestart parameter
+    Last change   : 07.03.2022 | v1.2 | Add NoLocalPassword parameter, Add Path Variables
 
     NOTICE
     THIS SCRIPT IS PROVIDED “AS IS” WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING 
@@ -71,7 +72,7 @@ if (-not($PasswordFilePath)) {
 If (-not(Test-Path -Path $ServersListPath -PathType Leaf )) {
     Write-Host "Servers file doesn't exist, exit script." -ForegroundColor Red
     exit 1
-} else {
+    } else {
     $servers = Get-Content $ServersListPath
 }
 
