@@ -76,7 +76,7 @@ If (-not(Test-Path -Path $ServersListPath -PathType Leaf )) {
 }
 
 # Authentication
-if (-not($LocalPW)) {
+if ($LocalPW) {
     $Credential = Get-Credential
 } else {
     $HexPass = Get-Content $PasswordFilePath
