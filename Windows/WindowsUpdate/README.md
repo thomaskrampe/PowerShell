@@ -1,6 +1,6 @@
 # Install Windows Updates
 
-This script update your windows server based on a simple txt file (one machine per line). This file should be saved in the script directory.
+This script update your windows server based on a simple txt file with name "servers.txt" (one machine per line). This file should be saved in the script directory.
 
 If a reboot is required after installing updates, the target machine will be restarted automatically via 'Restart-Computer' CMDlet. If don't like this just add the -NoRestart parameter.
 

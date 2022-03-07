@@ -4,8 +4,10 @@
 <#
 .SYNOPSIS
     Install Windows Updates
+
 .DESCRIPTION
     Install Windows Updates using a server list
+
 .EXAMPLE
     Output:
     -----------------------------------------------------------------------------------------------------------------------
@@ -20,10 +22,16 @@
     True
     Reboot required on server1.demo.local
     -----------------------------------------------------------------------------------------------------------------------
+
 .PARAMETER NoRestart
     Suppress restart
+
+.PARAMETER LocalPW
+    Ask for credentials (don't use saved credentials in a password file)
+
 .LINK
-    https://github.com/thomaskrampe/PowerShell/tree/master/Windows/WindowsUpdate       
+    https://github.com/thomaskrampe/PowerShell/tree/master/Windows/WindowsUpdate
+
 .NOTES
     Author        : Thomas Krampe | t.krampe@loginconsultants.de
     Version       : 0.1
@@ -43,21 +51,37 @@
 param
 (
     # Turn automatic reboot off
-    [Parameter (Position = 1)][Switch]$NoRestart
+    [Parameter][Switch]$NoRestart,
+    [Parameter][switch]$LocalPW
 )
 
+# Change your path and file name here
+$ServersListPath = ""
+$PasswordFilePath = ""
+
+if (-not($ServersListPath)) {
+    $ServersListPath = "$PSSCriptRoot\servers.txt"
+}
+
+if (-not($PasswordFilePath)) {
+    $PasswordFilePath = "$PSScriptRoot\password.txt"
+}
+
 # Read servers.txt content
-If (-not(Test-Path -Path $PSSCriptRoot\servers.txt -PathType Leaf )) {
+If (-not(Test-Path -Path $ServersListPath -PathType Leaf )) {
     Write-Host "Servers file doesn't exist, exit script." -ForegroundColor Red
     exit 1
 } else {
-    $servers = Get-Content "$PSScriptRoot\servers.txt"
+    $servers = Get-Content $ServersListPath
 }
 
-# Authentication (use whatever fit in your environment)
-# $Credential = Get-Credential
-$HexPass = Get-Content "$PSScriptRoot\7sS1C5C.txt"
-$Credential = New-Object -TypeName PSCredential -ArgumentList "administrator@demo.local", ($HexPass | ConvertTo-SecureString)
+# Authentication
+if (-not($LocalPW)) {
+    $Credential = Get-Credential
+} else {
+    $HexPass = Get-Content $PasswordFilePath
+    $Credential = New-Object -TypeName PSCredential -ArgumentList "administrator@demo.local", ($HexPass | ConvertTo-SecureString)
+}
 
 # Start the main loop
 ForEach ($server in $servers) {
@@ -87,12 +111,14 @@ ForEach ($server in $servers) {
         $rb = Invoke-Command -ComputerName $server -ScriptBlock {Get-WUIsPendingReboot} -Credential $Credential
         
         if ($rb -eq $true) {
-            write-host "Reboot required on $server." -ForegroundColor DarkYellow
+            write-host "Reboot required on $server." -ForegroundColor Yellow
             
             # Reboot server
             if (-not($NoRestart)) {
-                write-host "Restart initiated on $server." -ForegroundColor Red
+                write-host "Restart initiated on $server." -ForegroundColor Yellow
                 Restart-Computer -ComputerName $server -Credential $Credential -force
+            } else {
+                write-host "Automatic restart prevented with -NoRestart switch. Please restart the targets manually." -ForegroundColor Red
             }
         }
         else { 
