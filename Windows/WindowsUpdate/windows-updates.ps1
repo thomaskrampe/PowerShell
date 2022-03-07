@@ -99,7 +99,7 @@ ForEach ($server in $servers) {
     if ($up) { 
         # Installing updates on target server
         $upc = $up.count
-        write-host "Found $upc updates." -ForegroundColor Green
+        write-host "Found $upc update(s)." -ForegroundColor Green
         
         for ($num = 0 ; $num -le $upc ; $num++){
             write-host "    "$up[$num].Title
