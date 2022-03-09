@@ -52,8 +52,8 @@
 param
 (
     # Turn automatic reboot off
-    [Parameter][Switch]$NoRestart,
-    [Parameter][switch]$LocalPW
+    [Parameter()][Switch]$NoRestart,
+    [Parameter()][switch]$LocalPW
 )
 
 # Change your path and file name here
