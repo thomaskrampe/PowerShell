@@ -34,11 +34,12 @@
 
 .NOTES
     Author        : Thomas Krampe | t.krampe@loginconsultants.de
-    Version       : 0.1
+    Version       : 1.3
     Creation date : 04.03.2022 | v0.1 | Initial script
                     05.03.2022 | v1.0 | first release 
                     06.03.2022 | v1.1 | Add NoRestart parameter
-    Last change   : 07.03.2022 | v1.2 | Add NoLocalPassword parameter, Add Path Variables
+                    07.03.2022 | v1.2 | Add NoLocalPassword parameter, Add Path Variables
+    Last change   : 10.03.2022 | v1.3 | Remove some typos
 
     NOTICE
     THIS SCRIPT IS PROVIDED “AS IS” WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING 
@@ -51,9 +52,9 @@
 
 param
 (
-    # Turn automatic reboot off
+    # Turn automatic reboot off and prevent saved password file
     [Parameter()][Switch]$NoRestart,
-    [Parameter()][switch]$LocalPW
+    [Parameter()][switch]$NoLocalPW
 )
 
 # Change your path and file name here
@@ -77,7 +78,7 @@ If (-not(Test-Path -Path $ServersListPath -PathType Leaf )) {
 }
 
 # Authentication
-if ($LocalPW) {
+if ($NoLocalPW) {
     $Credential = Get-Credential
 } else {
     $HexPass = Get-Content $PasswordFilePath
