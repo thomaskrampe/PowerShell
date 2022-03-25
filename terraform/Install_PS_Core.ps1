@@ -6,6 +6,9 @@ Invoke-WebRequest https://chocolatey.org/install.ps1 -UseBasicParsing | Invoke-E
 # Install PowerShell core 7.1.3
 & C:\ProgramData\chocolatey\choco.exe install powershell-core --version=7.1.3 -y
 
+# Install nano
+& C:\ProgramData\chocolatey\choco.exe install nano -y
+
 Start-Sleep -Seconds 120
 
 # Update PATH variable 
