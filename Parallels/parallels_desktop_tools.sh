@@ -5,6 +5,7 @@ if [[ ! -d "/run/media/$(whoami)/Parallels Tools" ]]; then
     echo "Please mount parallels tools disk before install"
     exit
 fi
+
 echo "Copy install files to /tmp/parallels_fixed"
 cp -rf "/run/media/$(whoami)/Parallels Tools" /tmp/parallels_fixed
 chmod -R 755 /tmp/parallels_fixed
